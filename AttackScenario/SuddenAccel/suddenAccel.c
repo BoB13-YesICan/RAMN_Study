@@ -16,13 +16,13 @@ void send_can_frame(int s, struct can_frame frame, struct sockaddr_can addr) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 3 || strcmp(argv[2], "-diff") != 0) {
+    if (argc != 4 || strcmp(argv[2], "-diff") != 0) {
         printf("Usage: %s [can_interface] -diff [time_interval]\n", argv[0]);
         return 1;
     }
 
     char *interface = argv[1];
-    int interval = atoi(argv[2]);
+    int interval = atoi(argv[3]);
 
     // CAN 소켓 생성
     int s;
