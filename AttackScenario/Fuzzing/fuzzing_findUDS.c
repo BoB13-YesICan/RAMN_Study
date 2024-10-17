@@ -86,6 +86,11 @@ int main(int argc, char *argv[]) {
                     rx_frame.data[1] == 0x7e &&
                     rx_frame.data[2] == 0x00) {
                     printf("Response found from CAN ID: 0x%03X\n", can_id);
+                    printf("Press 'n' to continue...\n");
+                    char ch;
+                    do {
+                        ch = getchar();
+                    } while (ch != 'n');
                 }
             }
             clock_gettime(CLOCK_MONOTONIC, &current);
