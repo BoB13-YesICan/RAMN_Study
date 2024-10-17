@@ -12,8 +12,6 @@
 #define END_CAN_ID   0x200
 #define RESPONSE_OFFSET 0x008
 
-// HOWTOUSE: ' fuzzing [can interface name] '
-
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <can_interface>\n", argv[0]);
@@ -36,13 +34,18 @@ int main(int argc, char *argv[]) {
     }
 
     strcpy(ifr.ifr_name, can_if);
-    ioctl(s, SIOCGIFINDEX, &ifr);
+    if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
+        perror("ioctl");
+        close(s);
+        return 1;
+    }
 
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
     if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         perror("bind");
+        close(s);
         return 1;
     }
 
@@ -58,6 +61,7 @@ int main(int argc, char *argv[]) {
         // 프레임 전송
         if (write(s, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
             perror("write");
+            close(s);
             return 1;
         }
 
@@ -71,6 +75,7 @@ int main(int argc, char *argv[]) {
 
         if (ret < 0) {
             perror("select");
+            close(s);
             return 1;
         } else if (ret == 0) {
             // 타임아웃 - 응답 없음
@@ -80,6 +85,7 @@ int main(int argc, char *argv[]) {
         // 응답 수신
         if (read(s, &response, sizeof(struct can_frame)) < 0) {
             perror("read");
+            close(s);
             return 1;
         }
 
