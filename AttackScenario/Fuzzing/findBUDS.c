@@ -107,7 +107,6 @@ int main(int argc, char *argv[]) {
                         rx_frame.data[0] == 0x02 &&
                         rx_frame.data[1] == 0x7e &&
                         rx_frame.data[2] == 0x00) {
-                        printf("Response found from CAN ID: 0x%03X\n", rx_frame.can_id);
                         detected_canids[detected_count++] = rx_frame.can_id;
                         response_found = 1; // Mark response as found
                     }
@@ -118,12 +117,13 @@ int main(int argc, char *argv[]) {
 
         // If responses were detected, print them and wait for user input
         if (response_found) {
+            printf("#####response deteceted#####\n");
+            printf("Total detected CAN IDs: %d\n", detected_count);
             printf("Detected CAN IDs with response:\n");
             for (int i = 0; i < detected_count; i++) {
-                printf("0x%03X\n", detected_canids[i]);
+                printf("0x%03X,", detected_canids[i]);
             }
-            printf("Total detected CAN IDs: %d\n", detected_count);
-            printf("Press 'n' to continue...\n");
+            printf("\nPress 'n' to continue...\n");
             
             char ch;
             do {
