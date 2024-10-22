@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <net/if.h>
-#include <sys/ioctl.h>니
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -11,7 +11,7 @@
 
 #define PAYLOAD_SIZE 3
 #define SLEEP_TIME 50000
-#define START_CANID 0x7A0
+#define START_CANID 0x000
 #define END_CANID 0x800
 #define RX_CANID_OFFSET 0x008
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     strcpy(ifr.ifr_name, can_interface);
     if (ioctl(sock, SIOCGIFINDEX, &ifr) < 0) {
         perror("IOCTL error");
-        close(sock);
+        close(sock); 
         return 1;
     }
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         do {
             if (read(sock, &rx_frame, sizeof(struct can_frame)) > 0) {
                 // Check if the response CAN ID matches any CAN ID in the UDS_CANID_List.txt
-                for (int i = 0; i < num_canids; i++) {
+                for (int i = 0; i < num_canids; i++) {)
                     if (rx_frame.can_id == uds_canids[i] + RX_CANID_OFFSET &&
                         rx_frame.can_dlc == PAYLOAD_SIZE &&
                         rx_frame.data[0] == 0x02 &&
@@ -109,23 +109,23 @@ int main(int argc, char *argv[]) {
                         printf("Response found from CAN ID: 0x%03X\n", rx_frame.can_id);
                         detected_canids[detected_count++] = rx_frame.can_id;
                         printf("Press 'n' to continue...\n");
-                        char ch;
-                        do {
-                            ch = getchar();
-                        } while (ch != 'n');
                     }
                 }
+                printf("Deteted CAN IDs with reposen:\n");
+                for(int i = 0; i < detected_count; i++){
+                    printf("0x%03X\n", detected_canids[i]);
+                }
+                printf("Total detected CAN IDs: %d\n", detected_count);
+
+                
+                char ch;
+                do {
+                    ch = getchar();
+                } while (ch != 'n');
             }
             clock_gettime(CLOCK_MONOTONIC, &current);
         } while (((current.tv_sec - start.tv_sec) * 1000000 + (current.tv_nsec - start.tv_nsec) / 1000) < SLEEP_TIME);
     }
-
-    // Print the detected CAN IDs
-    printf("\nDetected CAN IDs with response:\n");
-    for (int i = 0; i < detected_count; i++) {
-        printf("0x%03X\n", detected_canids[i]);
-    }
-    printf("Total detected CAN IDs: %d\n", detected_count);
 
     // Close the socket
     close(sock);
