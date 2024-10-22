@@ -12,7 +12,7 @@
 #define PAYLOAD_SIZE 3
 #define SLEEP_TIME 50000
 #define START_CANID 0x000
-#define END_CANID 0x800
+#define END_CANID 0xFFF
 #define RX_CANID_OFFSET 0x008
 
 #define MAX_CANIDS 1024
