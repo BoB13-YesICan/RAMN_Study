@@ -8,7 +8,7 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
-void send_can_frame(int s, struct can_frame frame, struct socckaddr_can addr) {
+void send_can_frame(int s, struct can_frame frame, struct sockaddr_can addr) {
     if (write(s, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)){
         perror ("Write");
         exit(1);
@@ -17,7 +17,7 @@ void send_can_frame(int s, struct can_frame frame, struct socckaddr_can addr) {
 
 int main(int argc, char*argv[]) {
     if (argc != 5 || strcmp(argv[3], "-diff") != 0) {
-        printf("Usage: %s [can_interface] [ECUcanid] -diff [time_interval]\n"), argv[0]);
+        printf("Usage: %s [can_interface] [ECUcanid] -diff [time_interval]\n", argv[0]);
         exit(1);
     }
 
@@ -26,7 +26,7 @@ int main(int argc, char*argv[]) {
     int interval = atoi (argv[4]);
 
     int s;
-    struct socketaddr_can addr;
+    struct sockaddr_can addr;
     struct ifreq ifr;
     struct can_frame frame;
 
@@ -55,12 +55,12 @@ int main(int argc, char*argv[]) {
     do{
         //send ECURESET
         //resetpayload1
-        frame.can_id = can_id;
+        frame.can_id = ECUcan_id;
         frame.can_dlc = 3;
         memcpy(frame.data, resetpayload1, 3);
         send_can_frame(s, frame, addr);
         //resetpayload2
-        frame.can_id = can_id;
+        frame.can_id = ECUcan_id;
         frame.can_dlc = 3;
         memcpy(frame.data, resetpayload2, 3);
         send_can_frame(s, frame, addr);
