@@ -14,8 +14,8 @@
 #define START_CANID 0x000
 #define END_CANID 0xFFF
 #define RX_CANID_OFFSET 0x008
-
 #define MAX_CANIDS 1024
+#define CANID_LIST "UDS_CANID_List.txt"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     struct timeval timeout = {1, 0}; // 1-second timeout for recv
 
     // Read UDS_CANID_List.txt to get the list of CAN IDs
-    FILE *file = fopen("UDS_CANID_List.txt", "r");
+    FILE *file = fopen(CANID_LIST, "r");,
     if (!file) {
         perror("Failed to open UDS_CANID_List.txt");
         return 1;
