@@ -13,6 +13,7 @@
 #define PAYLOAD_SIZE 8
 #define TRANSMIT_COUNT 100 //10ms interval 100times send (1sec)
 #define TRANSMIT_INTERVAL_US 10000 // 10ms = 10,000 microseconds
+#define START_PAYLOAD 0x03FFFFFFFFFFFFE0ULL // 64-bit initial payload
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    uint64_t counter = 0; // 64bit payload counter reeset
+    uint64_t counter = START_PAYLOAD; // 64bit payload counter reeset
 
     //send frame to can_id_input
     while (1) {
