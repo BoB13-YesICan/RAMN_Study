@@ -11,11 +11,11 @@
 #include <stdint.h> // Added for uint64_t
 
 #define PAYLOAD_SIZE 8
-#define SLEEP_TIME 50000 // 기존 SLEEP_TIME을 유지하거나 조정할 수 있습니다.
+#define SLEEP_TIME 50000
 #define START_CANID 0x000
 #define END_CANID 0xFFF
-#define TRANSMIT_COUNT 100 // 1초 동안 10ms 간격으로 100번 전송
-#define TRANSMIT_INTERVAL_US 10000 // 10ms = 10,000 마이크로초
+#define TRANSMIT_COUNT 100 //end after 10ms, whole 1 sec, 100times
+#define TRANSMIT_INTERVAL_US 10000 // 10ms = 10,000 microsenconds
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
             }
 
             // Optionally, print the transmission log every N sends to reduce verbosity
-            if (i == 0 || i == TRANSMIT_COUNT - 1) { // 예: 처음과 마지막 전송 시만 출력
+            if (i == 0 || i == TRANSMIT_COUNT - 1) {
                 printf("CAN ID: 0x%03x | Payload: %02X %02X %02X %02X %02X %02X %02X %02X | Send %d/%d\n",
                        can_id,
                        tx_frame.data[0],
@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
         counter++;
 
         // Optional: Handle responses after transmitting the payload multiple times
-        // 이 부분은 필요에 따라 조정할 수 있습니다.
         struct timespec start, current;
         clock_gettime(CLOCK_MONOTONIC, &start);
         do {
