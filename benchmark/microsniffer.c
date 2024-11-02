@@ -12,14 +12,43 @@
 
 #define MAX_CAN_IDS 2048  // Maximum number of CAN IDs to track
 
-// Structure to hold the last timestamp for each CAN ID
-struct timespec last_timestamp[MAX_CAN_IDS] = {0};
+// Structure to store information for each CAN ID
+typedef struct {
+    struct timespec last_timestamp;  // Timestamp of the last packet
+    int packet_count;                // Total packet count for this CAN ID
+    long long time_interval;         // Time interval in microseconds
+} CANID_Info;
+
+// Array to store CAN ID information
+CANID_Info canid_info[MAX_CAN_IDS] = {0};
 
 // Function to calculate time difference in microseconds
 long long time_diff_microseconds(struct timespec start, struct timespec end) {
     long long sec_diff = end.tv_sec - start.tv_sec;
     long long nsec_diff = end.tv_nsec - start.tv_nsec;
     return sec_diff * 1000000LL + nsec_diff / 1000LL;
+}
+
+// Function to display the current CAN ID information
+void display_canid_info() {
+    // Clear the screen using ANSI escape code
+    printf("\033[2J\033[H");  // Clear screen and move cursor to the top left
+
+    printf("Packet Count | CAN ID | Time Interval (us)\n");
+    printf("-----------------------------------------\n");
+
+    // Iterate through CAN IDs and display only those with packet data
+    for (int i = 0; i < MAX_CAN_IDS; i++) {
+        if (canid_info[i].packet_count > 0) {
+            printf("%d           | 0x%03X  | ", canid_info[i].packet_count, i);
+            if (canid_info[i].packet_count > 1) {
+                printf("%lld\n", canid_info[i].time_interval);
+            } else {
+                printf("First packet\n");
+            }
+        }
+    }
+    fflush(stdout);  // Ensure the output is printed immediately
 }
 
 int main(int argc, char **argv) {
@@ -61,12 +90,11 @@ int main(int argc, char **argv) {
     }
 
     printf("Listening on %s...\n", ifname);
-    printf("Timestamp (s.microseconds) | CAN ID | DLC | Data | Time Diff (us)\n");
 
     while (1) {
         struct timespec recv_time;
 
-        // Receive CAN frame and capture timestamp
+        // Receive CAN frame and record the timestamp
         nbytes = recv(s, &frame, sizeof(struct can_frame), 0);
         if (nbytes < 0) {
             perror("Read");
@@ -77,33 +105,25 @@ int main(int argc, char **argv) {
         // Get high-resolution timestamp
         clock_gettime(CLOCK_MONOTONIC, &recv_time);
 
-        // Calculate time difference if we've seen this CAN ID before
+        // Update information for the CAN ID
+        int can_id = frame.can_id;
         long long time_diff = -1;
-        if (last_timestamp[frame.can_id].tv_sec != 0 || last_timestamp[frame.can_id].tv_nsec != 0) {
-            time_diff = time_diff_microseconds(last_timestamp[frame.can_id], recv_time);
-        }
 
-        // Store the current timestamp as the last timestamp for this CAN ID
-        last_timestamp[frame.can_id] = recv_time;
-
-        // Print data with time difference
-        printf("%lld.%06ld | 0x%03X | %d | ",
-               (long long)recv_time.tv_sec,
-               recv_time.tv_nsec / 1000,
-               frame.can_id,
-               frame.can_dlc);
-
-        for (int i = 0; i < frame.can_dlc; i++) {
-            printf("%02X ", frame.data[i]);
-        }
-
-        if (time_diff != -1) {
-            printf("| %lld", time_diff);  // Print time difference in microseconds
+        if (canid_info[can_id].packet_count > 0) {
+            // Calculate the time difference with the previous packet
+            time_diff = time_diff_microseconds(canid_info[can_id].last_timestamp, recv_time);
+            canid_info[can_id].time_interval = time_diff;
         } else {
-            printf("| First packet");
+            // First packet for this CAN ID
+            canid_info[can_id].time_interval = -1;
         }
 
-        printf("\n");
+        // Update last timestamp and increase packet count for the CAN ID
+        canid_info[can_id].last_timestamp = recv_time;
+        canid_info[can_id].packet_count++;
+
+        // Display the updated information for all CAN IDs
+        display_canid_info();
     }
 
     close(s);
