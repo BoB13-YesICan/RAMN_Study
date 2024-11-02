@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[]) {
     char *interface = argv[1];
-    int canid = argv[2];
+    int canid = (int)strtol(argv[2], NULL, 16);
     int interval = atoi(argv[4]);
 
     int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
