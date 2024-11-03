@@ -3,7 +3,7 @@
 
 #include "all_headers.h"
 
-//payloads 'struct' declaration
+//payloads structure declaration
 struct payloads {
     unsigned char payload1[3];
     unsigned char payload2[3];
@@ -12,15 +12,16 @@ struct payloads {
 };
 
 /*================================================================
-payloads 'data' declaraitons
+'payloads' structure variables declaraitons
 all CAN Packets for send to victim is here
+rest in payloads.c
 ==================================================================*/
 
 extern struct payloads msq;             //masquerade, masqueradeCheck
 extern struct payloads fuzzing;         //findUDS, findBUDS, randomCANID, randomPayload
 extern struct payloads dos;             //dos
 extern struct payloads replay;          //replay, suddenaccel
-extern struct payloads suspension;      //resetecu, dos
+extern struct payloads suspension;      //resetecu, dos(?)
 
 
 

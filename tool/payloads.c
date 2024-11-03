@@ -1,5 +1,9 @@
 #include "payloads.h"
 
+/*================================================================
+'payloads' structure variables being reset here
+==================================================================*/
+
 struct paylaods dos = {
     .payload3[8] = {0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78};
 };
