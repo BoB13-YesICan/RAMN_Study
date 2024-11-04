@@ -1,10 +1,4 @@
-#include "payloads.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <unistd.h>
-#include "attack_sender.h"
+#include "all_headers.h"
 
 void send_can_packet_showpayload(int socket, struct sockaddr_can *addr, unsigned char *data, int length, int can_id) {
     struct can_frame frame;
@@ -34,7 +28,7 @@ void send_can_packet_sendonly(int socket, struct sockaddr_can *addr, unsigned ch
     } else {}
 }
 
-void attack_packet_sender(const char *interface, int attack_code, int canid, int time_diff) {
+void attack_packet_sender(int socket, struct sockaddr &addr, int attack_code, int canid, int time_diff) {
     int s;
     struct sockaddr_can addr;
     struct ifreq ifr;
