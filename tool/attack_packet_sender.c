@@ -34,13 +34,13 @@ void attack_packet_sender(int socket, struct sockaddr_can *addr, int attack_code
             replay_suddenaccel(socket, addr, canid, time_diff);
             break;
         case 4:
-            fuzzing_find_uds(socket, addr, canid);
+            fuzzing_find_uds(socket, addr, canid, time_diff);
             break;
         case 5:
-            fuzzing_random_canid(socket, addr, canid);
+            fuzzing_random_canid(socket, addr, canid, time_diff);
             break;
         case 6:
-            fuzzing_random_payload(socket, addr, canid);
+            fuzzing_random_payload(socket, addr, canid, time_diff);
             break;
         case 7:
             suspension_resetecu(socket, addr, canid, time_diff);
