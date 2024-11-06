@@ -8,7 +8,7 @@ void suspension_resetecu(int socket, struct sockaddr_can *addr, int canid, int t
 
     int can_id = canid;
     int interval = time_diff;
-
+    int s = socket;
     struct can_frame frame;
     frame.can_id = can_id;
     frame.can_dlc = 3;
