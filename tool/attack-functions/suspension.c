@@ -6,8 +6,8 @@ void suspension_resetecu(int socket, struct sockaddr_can *addr, int canid, int t
         return 1;
     }
 
-    int can_id = canid
-    int interval = time_diff
+    int can_id = canid;
+    int interval = time_diff;
 
     struct can_frame frame;
     frame.can_id = can_id;
