@@ -1,4 +1,8 @@
-// #include "all_headers.h"
+#include "all_headers.h"
+
+void dos_dos(int socket, struct sockaddr_can *addr, int canid, int time_diff){
+
+}
 
 // void dos_dos(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
 //     struct can_frame frame;

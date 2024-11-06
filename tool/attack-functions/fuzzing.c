@@ -1,4 +1,16 @@
-// #include "all_headers.h"
+#include "all_headers.h"
+
+void fuzzing_find_uds(int socket, struct sockaddr_can *addr, int canid, int time_diff){
+
+}
+
+void fuzzing_random_canid(int socket, struct sockaddr_can *addr, int canid, int time_diff){
+
+}
+
+void fuzzing_random_payload(int socket, struct sockaddr_can *addr, int canid, int time_diff){
+
+}
 
 // #define SLEEP_TIME 50000
 // #define START_CANID 0x000

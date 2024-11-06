@@ -1,4 +1,8 @@
-// #include "all_headers.h"
+#include "all_headers.h"
+
+void suspension_resetecu(int socket, struct sockaddr_can *addr, int canid, int time_diff){
+
+}
 
 // void suspension_resetecu(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
 //     if (argc != 5 || strcmp(argv[3], "-diff") != 0) {
