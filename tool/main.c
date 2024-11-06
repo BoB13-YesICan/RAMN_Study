@@ -11,33 +11,51 @@ Parameters:
 - time_diff: time difference between packets (in ms)
 ==================================================================*/
 
-void print_get_attack_codes(void){
+char interface[IFNAMSIZ];
+int attack_code;
+int canid;
+int time_diff;
+
+void print_get_attack_codes(void) {
     printf("=====================attack  codes=====================\n ");
     printf("(1): dos_dos                (5): fuzzing_random_canid\n ");
     printf("(2): replay_replay          (6): fuzzing_random_payload\n");
     printf("(3): replay_suddenaccel     (7): suspension_resetecu\n");
     printf("(4): fuzzing_find_uds       (8): msq_msq[masquerade]\n");
-    printf("========================================================\n");
+    printf("========================================================\n\n");
+    printf("## enter attack code you want: ");
+}
+
+void get_attack_variables() {
+    print_get_attack_codes();
+    scanf("%d", &attack_code);
+    if (attack_code < 1 || attack_code > 8) {
+        printf("\nInvalid attack code. Please try again.\n\n");
+        get_attack_variables();
+    }
+
+    printf("## Enter CAN interface name (e.x:vcan0): ");
+    scanf("%s", interface);
+
+    printf("## Enter CAN ID (in hexadecimal, [e.x:0x100]): ");
+    scanf("%x", &canid);
+    if (canid < 0x000 || canid > 0xfff) {
+        printf("\nInvalid CAN ID. Please try again.\n\n");
+        get_attack_variables();
+    }
+
+    printf("## Enter time difference (in ms), [enter 0 to send once]: ");
+    scanf("%d", &time_diff);
+    if ((time_diff < 0) || (time_diff > 100000)) {
+        printf("\nInvalid time difference. Please try again.\n\n");
+        get_attack_variables();
+    }
 }
 
 int main() {
-    char interface[IFNAMSIZ];
-    int attack_code;
-    int canid;
-    int time_diff;
 
     // 사용자 입력 받기 
-    print_get_attack_codes();
-    scanf("%d", &attack_code);
-
-    printf("Enter CAN interface name (e.g., vcan0): ");
-    scanf("%s", interface);
-
-    printf("Enter CAN ID (in hexadecimal, [e.x:0x100]): ");
-    scanf("%x", &canid);
-
-    printf("Enter time difference (in ms), [enter 0 to send once]: ");
-    scanf("%d", &time_diff);
+    get_attack_variables();
 
     // 소켓 생성 및 설정
     int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);

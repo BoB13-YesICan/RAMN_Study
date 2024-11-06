@@ -33,6 +33,10 @@ $(TARGET): $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
+# attack-functions 디렉토리 내의 파일 컴파일 규칙
+attack-functions/%.o: attack-functions/%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
 # 클린업 규칙
 clean:
 	rm -f $(OBJ) $(TARGET)
