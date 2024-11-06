@@ -5,15 +5,6 @@
 #define START_CANID 0x000
 #define END_CANID 0xFFF
 
-// 구조체 선언 및 초기화
-struct payloads {
-    unsigned char payload1[3];
-    unsigned char payload2[3];
-} fuzzing = {
-    .payload1 = {0x02, 0x4e, 0x00},  // 전송할 TX payload
-    .payload2 = {0x02, 0x7e, 0x00}   // 응답에서 확인할 RX payload
-};
-
 void fuzzing_find_uds(int socket, struct sockaddr_can *addr) {
     struct can_frame tx_frame, rx_frame;
     struct timespec start, current;
@@ -23,6 +14,7 @@ void fuzzing_find_uds(int socket, struct sockaddr_can *addr) {
         tx_frame.can_id = can_id;
         tx_frame.can_dlc = sizeof(fuzzing.payload1);
         memcpy(tx_frame.data, fuzzing.payload1, sizeof(fuzzing.payload1));
+
 
         // CAN 프레임 전송
         if (write(socket, &tx_frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
