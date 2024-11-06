@@ -1,20 +1,23 @@
 #include "all_headers.h"
 
 /*================================================================
-main
+main.c
+This program is a CAN packet sender with various attack codes.
+
+Parameters:
+- interface: CAN interface name
+- attack_code: attack code
+- canid: CAN ID (in hexadecimal)
+- time_diff: time difference between packets (in ms)
 ==================================================================*/
 
 void print_get_attack_codes(void){
-    printf("============attack codes=========\n ");
-    printf("(1): dos_dos\n ");
-    printf("(2): replay_replay\n");
-    printf("(3): replay_suddenaccel\n");
-    printf("(4): fuzzing_find_uds\n");
-    printf("(5): fuzzing_random_canid\n");
-    printf("(6): fuzzing_random_payload\n");
-    printf("(7): suspension_resetecu\n");
-    printf("(8): msq_msq[masquerade]\n");
-    printf("=================================\n");
+    printf("=====================attack  codes=====================\n ");
+    printf("(1): dos_dos                (5): fuzzing_random_canid\n ");
+    printf("(2): replay_replay          (6): fuzzing_random_payload\n");
+    printf("(3): replay_suddenaccel     (7): suspension_resetecu\n");
+    printf("(4): fuzzing_find_uds       (8): msq_msq[masquerade]\n");
+    printf("========================================================\n");
 }
 
 int main() {
@@ -23,17 +26,17 @@ int main() {
     int canid;
     int time_diff;
 
-    // 사용자 입력 받기
-    printf("Enter CAN interface name (e.g., vcan0): ");
-    scanf("%s", interface);
-    
+    // 사용자 입력 받기 
     print_get_attack_codes();
     scanf("%d", &attack_code);
+
+    printf("Enter CAN interface name (e.g., vcan0): ");
+    scanf("%s", interface);
 
     printf("Enter CAN ID (in hexadecimal, [e.x:0x100]): ");
     scanf("%x", &canid);
 
-    printf("Enter time difference (in ms): ");
+    printf("Enter time difference (in ms), [enter 0 to send once]: ");
     scanf("%d", &time_diff);
 
     // 소켓 생성 및 설정
@@ -60,9 +63,10 @@ int main() {
         return 1;
     }
 
-    // 소켓과 주소를 attack_packet_sender로 전달
+    //call attack_packet_sender
     attack_packet_sender(s, &addr, attack_code, canid, time_diff);
-
-    close(s);  // 메인 함수에서 소켓 닫기
+    
+    //close the socket
+    close(s);
     return 0;
 }

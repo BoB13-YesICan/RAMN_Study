@@ -1,7 +1,8 @@
 #include "payloads.h"
 
 /*================================================================
-'payloads' structure variables being reset here
+payloads.c
+this function resets payload structures
 ==================================================================*/
 
 struct paylaods dos = {

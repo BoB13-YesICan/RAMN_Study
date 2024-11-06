@@ -1,5 +1,23 @@
 #include "all_headers.h"
 
+/*================================================================
+can_sender.c
+This function sends CAN packets with or without payloads.
+
+Parameters:
+- socket: CAN socket
+- addr: CAN address
+- data: CAN payload data
+- length: CAN payload length
+- can_id: CAN ID
+- show_payload: Whether to show payload or not
+- interval: interval between CAN packets in milliseconds
+- time_diff: time difference between CAN packets in milliseconds
+
+showpayload shows the payload when sending
+sendonly don't shows the payload when sending
+==================================================================*/
+
 
 void send_can_packet_showpayload(int socket, struct sockaddr_can *addr, unsigned char *data, int length, int can_id) {
     struct can_frame frame;
@@ -18,7 +36,7 @@ void send_can_packet_showpayload(int socket, struct sockaddr_can *addr, unsigned
     }
 }
 
-void send_can_packet_sendonly(int socket, struct sockaddr_can *addr, unsigned char *data, int length, int can_id) {
+void send_can_packet(int socket, struct sockaddr_can *addr, unsigned char *data, int length, int can_id) {
     struct can_frame frame;
     frame.can_id = can_id;
     frame.can_dlc = length;

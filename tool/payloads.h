@@ -23,9 +23,4 @@ extern struct payloads dos;             //dos
 extern struct payloads replay;          //replay, suddenaccel
 extern struct payloads suspension;      //resetecu, dos(?)
 
-
-
-// CAN pakcet send function
-void send_can_packet(int socket, struct sockaddr_can *addr, unsigned char *data, int length, int can_id);
-
 #endif // PAYLOADS_H

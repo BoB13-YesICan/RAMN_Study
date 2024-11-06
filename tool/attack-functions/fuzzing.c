@@ -49,25 +49,7 @@ void fuzzing_find_uds(int socket, struct sockaddr_can *addr, int canid, int time
 //=====================fuzzingrandompayload=====================
 
 void fuzzing_randompayload(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <can_interface> <can_id>\n", argv[0]);
-        return 1;
-    }
-
-    const char *can_interface = argv[1];
-    unsigned int can_id_input;
-    
-    if (sscanf(argv[2], "%x", &can_id_input) != 1) {
-        fprintf(stderr, "Invalid CAN ID format. Use hexadecimal (e.g., 0x1A3) or decimal (e.g., 419).\n");
-        return 1;
-    }
-    
-    //chekc CANID boundary
-    if (can_id_input > 0xFFF) {
-        fprintf(stderr, "CAN ID must be between 0x000 and 0xFFF.\n");
-        return 1;
-    }
-
+    int can_id = canid;
     int s = socket;
     struct sockaddr_can addr;
     struct ifreq ifr;
@@ -80,15 +62,6 @@ void fuzzing_randompayload(int socket, struct sockaddr_can *addr, int canid, int
         return 1;
     }
 
-    //set can interface
-    strncpy(ifr.ifr_name, can_interface, IFNAMSIZ - 1);
-    ifr.ifr_name[IFNAMSIZ - 1] = '\0';
-    if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
-        perror("IOCTL error");
-        close(s);
-        return 1;
-    }
-
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
@@ -97,8 +70,8 @@ void fuzzing_randompayload(int socket, struct sockaddr_can *addr, int canid, int
 
     //send frame to can_id_input
     while (1) {
-        tx_frame.can_id = can_id_input;
-        tx_frame.can_dlc = PAYLOAD_SIZE;
+        tx_frame.can_id = can_id;
+        tx_frame.can_dlc = 8;
 
         
         tx_frame.data[0] = (counter >> 56) & 0xFF;
@@ -137,10 +110,7 @@ void fuzzing_randompayload(int socket, struct sockaddr_can *addr, int canid, int
 
             usleep(TRANSMIT_INTERVAL_US);
         }
-
         counter++;
-
-
     }
     close(sock);
     return 0;
