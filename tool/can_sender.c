@@ -14,8 +14,9 @@ Parameters:
 - interval: interval between CAN packets in milliseconds
 - time_diff: time difference between CAN packets in milliseconds
 
-showpayload shows the payload when sending
-sendonly don't shows the payload when sending
+funtions:
+- send_can_packet_showpayload: shows the payload and CANID when sending
+_ send_can_packet don't shows the payload when sending
 ==================================================================*/
 
 

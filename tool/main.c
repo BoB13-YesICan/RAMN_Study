@@ -17,7 +17,7 @@ int canid;
 int time_diff;
 
 void print_get_attack_codes(void) {
-    printf("=====================attack  codes=====================\n");
+    printf("=====================attack  codes======================\n");
     printf("(1): dos_dos                (5): fuzzing_random_canid\n");
     printf("(2): replay_replay          (6): fuzzing_random_payload\n");
     printf("(3): replay_suddenaccel     (7): suspension_resetecu\n");

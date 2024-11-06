@@ -5,9 +5,10 @@
 msq.c
 This function performs the masquerade attack
 
-void msq_msq:
-reset ECU and make sudde acceleration
-(break pedal depth 0% && accel pedal depth 100%)
+functions
+- msq_msq: performs the masquerade attack
+    reset ECU and make sudde acceleration
+    (break pedal depth 0% && accel pedal depth 100%)
 ==================================================================*/
 void msq_msq(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
 
