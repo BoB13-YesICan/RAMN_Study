@@ -35,7 +35,7 @@ void startpage() {
     printf("|      /       /  /_\\  \\   |  |\\/|  | |  . `  | \n");
     printf("|  |\\  \\----. /  _____  \\  |  |  |  | |  |\\   | \n");
     printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_1.0\n");
-    printf("                                                \n");
+    printf("                                               team.YESICAN\n");
 }
 
 void print_get_attack_codes(void) {
@@ -56,7 +56,7 @@ void get_attack_variables() {
         get_attack_variables();
     }
 
-    printf("## Enter CAN interface name (e.g.:vcan0): ");
+    printf("## Enter CAN interface name [e.g.:vcan0]: ");
     scanf("%s", interface);
 
     printf("## Enter CAN ID (in hexadecimal, [e.g.:0x100]): ");
