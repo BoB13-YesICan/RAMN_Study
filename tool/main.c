@@ -34,7 +34,7 @@ void startpage() {
     printf("|  |_)  |       /  ^  \\    |  \\  /  | |   \\|  | \n");
     printf("|      /       /  /_\\  \\   |  |\\/|  | |  . `  | \n");
     printf("|  |\\  \\----. /  _____  \\  |  |  |  | |  |\\   | \n");
-    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__| \n");
+    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|      ver_1.0\n");
     printf("                                                \n");
 }
 
@@ -76,11 +76,11 @@ void get_attack_variables() {
 
 int main() {
     startpage();
-    // 사용자 입력 받기 
+    //get user input
     get_attack_variables();
     clear_read_buffer();
 
-    // 소켓 생성 및 설정
+    //socket create
     int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (s < 0) {
         perror("Socket creation error");
