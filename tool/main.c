@@ -16,6 +16,10 @@ int attack_code;
 int canid;
 int time_diff;
 
+void clear_read_buffer() {
+    while(getchar()!='\n');
+}
+
 void print_get_attack_codes(void) {
     printf("=====================attack  codes======================\n");
     printf("(1): dos_dos                (5): fuzzing_random_canid\n");
@@ -56,6 +60,7 @@ int main() {
 
     // 사용자 입력 받기 
     get_attack_variables();
+    clear_read_buffer();
 
     // 소켓 생성 및 설정
     int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
