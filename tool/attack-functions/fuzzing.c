@@ -38,9 +38,7 @@ void fuzzing_find_uds(int socket, struct sockaddr_can *addr, int canid, int time
             if (nbytes > 0) {
                 if (rx_frame.can_id == (current_canid + 0x008) &&
                     rx_frame.can_dlc == fuzzing.payload2_len &&
-                    rx_frame.data[0] == 0x02 &&
-                    rx_frame.data[1] == 0x7E &&
-                    rx_frame.data[2] == 0x00) {
+                    (memcmp(rx_frame.data, fuzzing.payload2, fuzzing.payload2_len) == 0)) {
                     printf("Response found from CAN ID: 0x%03X\n", current_canid);
                     printf("Press 'n' to continue...\n");
                     char ch;
