@@ -19,6 +19,8 @@ all_headers.h
 #include <linux/can/raw.h>
 #include <time.h>
 #include <errno.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 
 //userdefined headers

@@ -48,6 +48,9 @@ void attack_packet_sender(int socket, struct sockaddr_can *addr, int attack_code
         case 8:
             msq_msq(socket, addr, canid, time_diff);
             break;
+        case 9:
+            return 1;
+            
 
         default:
             printf("Invalid attack code\n");
