@@ -45,7 +45,7 @@ void print_get_attack_codes(void) {
     printf("(3): replay_suddenaccel     (7): suspension_resetecu\n");
     printf("(4): fuzzing_find_uds       (8): msq_msq[masquerade]\n");
     printf("========================================================\n\n");
-    printf("## enter attack code you want: ");
+    printf("## Enter attack code you want: ");
 }
 
 void get_attack_variables() {
