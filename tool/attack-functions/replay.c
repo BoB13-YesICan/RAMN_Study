@@ -13,45 +13,37 @@ Parameters:
 - addr: CAN address
 ==================================================================*/
 
-void replay_replay(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
-    unsigned char input_data[8];
-    int data_len = 0;
+#define MAX_BYTES 8
 
-    printf("Enter payload to send in hexadecimal (e.g., 0x12 0xAB ...), up to 8 bytes\n");
-    printf("type here >> ");
-    char input_line[256];
-    if (fgets(input_line, sizeof(input_line), stdin) != NULL) {
-        char *token = strtok(input_line, " \t\n");
-        while (token != NULL && data_len < 8) {
-            unsigned int byte_value;
-            if (sscanf(token, "%x", &byte_value) == 1) {
-                input_data[data_len++] = (unsigned char)byte_value;
-            } else {
-                printf("Invalid input: %s\n", token);
-            }
-            token = strtok(NULL, " \t\n");
-        }
-        if (data_len == 0) {
-            printf("No valid data entered.\n");
-            return;
-        }
-    } else {
-        printf("No input received.\n");
-        return;
+void replay_replay(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
+    struct can_frame tx_frame;
+    int data_len = 0;
+    size_t input_length = 0;
+    char hex_input[17];
+    uint8_t byte_array[MAX_BYTES] = {0};
+
+    while (1) {
+        printf("Enter payload to send in hexadecimal (e.g., OA1B2C ...), up to 8 bytes\n");
+        printf("type here >> ");
+        scanf("%16s", hex_input);
+
+        input_length = strlen(hex_input);
+        if (input_length % 2 == 0 && input_length <= 16) {
+            data_len = input_length / 2;
+            break;
+        } else printf("\nwrong payload data, please enter maximum 8-byte hex data.\n");
     }
 
-    do {
-        send_can_packet(socket, addr, input_data, data_len, canid);
-        printf("Sent CAN ID: 0x%X, Data:", canid);
-        for (int i = 0; i < data_len; i++) {
-            printf(" 0x%02X", input_data[i]);
-        }
-        printf("\n");
-
+    for (size_t i = 0; i < input_length / 2; i++) {
+        sscanf(hex_input + 2 * i, "%2hhx", &tx_frame.data[i]);
+    }
+    while(1) {
+        send_can_packet_showpayload(socket, addr, tx_frame.data, data_len, canid);
         if (time_diff == 0) break;
-        usleep(time_diff * 1000);
-    } while (1);
+        usleep (time_diff * 1000);
+    }  
 }
+
 
 void replay_suddenaccel(int socket, struct sockaddr_can *addr, int canid, int time_diff){
     do {
