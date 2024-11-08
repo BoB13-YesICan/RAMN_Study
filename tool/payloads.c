@@ -18,8 +18,8 @@ struct payloads replay ={
 };
 
 struct payloads fuzzing = {
-    .payload1 = {0x02, 0x4e, 0x00},                                 //tx payload to make reply
-    .payload2 = {0x02, 0x7e, 0x00},                                 //rx payload to check ecu live
+    .payload1 = {0x02, 0x3E, 0x00},                                 //tx payload to make reply
+    .payload2 = {0x02, 0x7E, 0x00},                                 //rx payload to check ecu live
     .payload3 = {0x00, 0x00, 0xD2, 0x11, 0x73, 0x58, 0xFA, 0xF8},   //fuzzing_random_canid payload
     .payload1_len = 3,
     .payload2_len = 3,
