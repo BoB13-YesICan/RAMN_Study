@@ -56,10 +56,10 @@ void get_attack_variables() {
         get_attack_variables();
     }
 
-    printf("## Enter CAN interface name (e.x:vcan0): ");
+    printf("## Enter CAN interface name (e.g.:vcan0): ");
     scanf("%s", interface);
 
-    printf("## Enter CAN ID (in hexadecimal, [e.x:0x100]): ");
+    printf("## Enter CAN ID (in hexadecimal, [e.g.:0x100]): ");
     scanf("%x", &canid);
     if (canid < 0x000 || canid > 0xfff) {
         printf("\nInvalid CAN ID. Please try again.\n\n");

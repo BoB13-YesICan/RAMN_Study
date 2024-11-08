@@ -12,7 +12,7 @@ functions:
 ==================================================================*/
 
 #define END_CANID 0x7FF
-#define SLEEP_TIME 50000
+#define SLEEP_TIME 5000
 #define START_PAYLOAD 0x03FFFFFFFFFFFFE0ULL // 64-bit initial payload
 #define TRANSMIT_COUNT 100 //10ms interval 100times send (1sec)[fuzzing_random_payload]
 

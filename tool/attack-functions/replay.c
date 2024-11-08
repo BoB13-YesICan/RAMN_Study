@@ -22,7 +22,7 @@ void replay_replay(int socket, struct sockaddr_can *addr, int canid, int time_di
     uint8_t byte_array[MAX_BYTES] = {0};
 
     while (1) {
-        printf("Enter payload to send in hexadecimal (e.g., OA1B2C ...), up to 8 bytes\n");
+        printf("Enter payload to send in hexadecimal (e.g.: OA1B2C ...), up to 8 bytes\n");
         printf("type here >> ");
         scanf("%16s", hex_input);
 
