@@ -12,7 +12,6 @@ Parameters:
 - socket: CAN socket
 - addr: CAN address
 ==================================================================*/
-
 #define MAX_BYTES 8
 
 void replay_replay(int socket, struct sockaddr_can *addr, int canid, int time_diff) {

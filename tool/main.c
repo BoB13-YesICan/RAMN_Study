@@ -20,6 +20,24 @@ void clear_read_buffer() {
     while(getchar()!='\n');
 }
 
+void startpage() {
+    #include <stdio.h>
+    printf("        _    _                 _    \n");
+    printf("       | |  | |               | |   \n");
+    printf("  __ _ | |_ | |_   __ _   ___ | | __\n");
+    printf(" / _` || __|| __| / _` | / __|| |/ /\n");
+    printf("| (_| || |_ | |_ | (_| || (__ |   < \n");
+    printf(" \\__,_| \\__| \\__| \\__,_| \\___||_|\\_\\\n");
+    printf("                                     \n\n");
+    printf(".______           ___      .___  ___. .__   __. \n");
+    printf("|   _  \\         /   \\     |   \\/   | |  \\ |  | \n");
+    printf("|  |_)  |       /  ^  \\    |  \\  /  | |   \\|  | \n");
+    printf("|      /       /  /_\\  \\   |  |\\/|  | |  . `  | \n");
+    printf("|  |\\  \\----. /  _____  \\  |  |  |  | |  |\\   | \n");
+    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__| \n");
+    printf("                                                \n");
+}
+
 void print_get_attack_codes(void) {
     printf("=====================attack  codes======================\n");
     printf("(1): dos_dos                (5): fuzzing_random_canid\n");
@@ -57,7 +75,7 @@ void get_attack_variables() {
 }
 
 int main() {
-
+    startpage();
     // 사용자 입력 받기 
     get_attack_variables();
     clear_read_buffer();
