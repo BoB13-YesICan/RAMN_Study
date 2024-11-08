@@ -1,5 +1,3 @@
-# Makefile for the CAN packet sender tool
-
 # 컴파일러와 플래그 설정
 CC = gcc
 CFLAGS = -Wall -Wextra -g
@@ -20,10 +18,11 @@ SRC = main.c \
 OBJ = $(SRC:.c=.o)
 
 # 실행 파일 이름
-TARGET = tool
+TARGET = attackRAMN
 
 # 기본 빌드 규칙
 all: $(TARGET)
+	@$(MAKE) clean_objs  # 빌드 완료 후 .o 파일 삭제
 
 # 실행 파일 생성 규칙
 $(TARGET): $(OBJ)
@@ -37,9 +36,13 @@ $(TARGET): $(OBJ)
 attack-functions/%.o: attack-functions/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-# 클린업 규칙
+# 오브젝트 파일만 삭제하는 규칙
+clean_objs:
+	rm -f $(OBJ)
+
+# 전체 클린업 규칙
 clean:
 	rm -f $(OBJ) $(TARGET)
 
 # 디렉토리 내의 파일 변경을 추적
-.PHONY: all clean
+.PHONY: all clean clean_objs
