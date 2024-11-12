@@ -36,6 +36,8 @@ void replay_replay(int socket, struct sockaddr_can *addr, int canid, int time_di
     for (size_t i = 0; i < input_length / 2; i++) {
         sscanf(hex_input + 2 * i, "%2hhx", &tx_frame.data[i]);
     }
+    printf(RED_TEXT"=====================sending packet=====================\n");
+    printf(RESET_COLOR);
     while(1) {
         send_can_packet_showpayload(socket, addr, tx_frame.data, data_len, canid);
         if (time_diff == 0) break;

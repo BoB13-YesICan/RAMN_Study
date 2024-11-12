@@ -21,6 +21,9 @@ Parameters:
 
 void attack_packet_sender(int socket, struct sockaddr_can *addr, int attack_code, int canid, int time_diff) {
 
+   printf(RED_TEXT"=====================attack  start======================\n");
+   printf(RESET_COLOR"\n");
+
     //call attack-functions
     // dos, replay, fuzzing, suspension, msq
     switch (attack_code) {

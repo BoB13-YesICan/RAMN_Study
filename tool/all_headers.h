@@ -22,6 +22,12 @@ all_headers.h
 #include <signal.h>
 #include <sys/wait.h>
 
+//define console print colors
+#define YELLOW_TEXT "\033[33m"
+#define RED_TEXT "\033[1;31m"
+#define RESET_COLOR "\033[0m"
+#define CYAN_TEXT "\033[36m"
+
 
 //userdefined headers
 #include "payloads.h"

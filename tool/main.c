@@ -15,28 +15,13 @@ char interface[IFNAMSIZ];
 int attack_code;
 int canid;
 int time_diff;
-pid_t child_pid;
 
 void clear_read_buffer() {
     while(getchar()!='\n');
 }
 
-void handle_sigint(int sig) {
-    if (child_pid > 0) {
-        kill(child_pid, SIGTERM);
-        waitpid(child_pid, NULL, 0);
-        printf("\nRestarting main fuction...\n");
-        main();
-    } else {
-        exit(0);
-    }
-}
-
-#include <stdio.h> // 함수 외부로 이동
-
 void startpage() {
-    // yellow txt
-    printf("\033[33m");
+    printf(YELLOW_TEXT);
     printf("        _    _                 _    \n");
     printf("       | |  | |               | |   \n");
     printf("  __ _ | |_ | |_   __ _   ___ | | __\n");
@@ -48,18 +33,14 @@ void startpage() {
     printf("|  |_)  |       /  ^  \\    |  \\  /  | |   \\|  | \n");
     printf("|      /       /  /_\\  \\   |  |\\/|  | |  . `  | \n");
     printf("|  |\\  \\----. /  _____  \\  |  |  |  | |  |\\   | \n");
-    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_1.1\n");
+    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_1.0\n");
     printf("                                               team.YESICAN\n");
-    //style reset
-    printf("\033[0m");
+    printf(RESET_COLOR);
     
-    // blue bg, red txt
-    printf("\033[1;31m");
+    printf(RED_TEXT);
     printf("press 'ctrl+Z' to exit program\npress 'ctrl+C' to go main menu while attack\n");
-    // style reset
-    printf("\033[0m");
+    printf(RESET_COLOR);
 }
-
 
 void print_get_attack_codes(void) {
     printf("=====================attack  codes======================\n");
@@ -98,10 +79,7 @@ void get_attack_variables() {
 }
 
 int main() {
-    signal(SIGINT, handle_sigint);
-
     startpage();
-
     //get user input
     get_attack_variables();
     clear_read_buffer();
@@ -130,18 +108,8 @@ int main() {
         return 1;
     }
 
-    child_pid = fork();
-    if (child_pid == 0) {
-        attack_packet_sender(s, &addr, attack_code, canid, time_diff);
-        close(s);
-        exit(0);
-    } else if (child_pid < 0) {
-        perror("Fork error");
-        close(s);
-        return 1;
-    }
-
-    wait (NULL);
+    //call attack_packet_sender
+    attack_packet_sender(s, &addr, attack_code, canid, time_diff);
     
     //close the socket
     close(s);

@@ -20,5 +20,4 @@ void suspension_resetecu(int socket, struct sockaddr_can *addr, int canid, int t
         if (time_diff == 0) break;
         usleep(time_diff * 1000);
     } while (1);
-
 }
