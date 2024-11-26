@@ -78,8 +78,20 @@ void fuzzing_random_payload(int socket, struct sockaddr_can *addr, int canid, in
         tx_frame.data[7] = counter & 0xFF;
 
         for (int i = 0; i < TRANSMIT_COUNT; i++) {
-            if (i == 0) printf("Sending start, [1/100] CAN ID: 0x%03X, Payload: 0x%016llX\n", canid, counter);
-            if (i == TRANSMIT_COUNT - 1) printf("Sending stop, [100/100] CAN ID: 0x%03X, Payload: 0x%016llX\n", canid, counter);
+            if (i == 0) {
+                printf("Sending start, [1/100] CAN ID: ");
+                printf(CYAN_TEXT"0x%03X", canid);
+                printf(RESET_COLOR", Payload: ");
+                printf(CYAN_TEXT"0x%016llX\n", counter);
+                printf(RESET_COLOR);
+            }
+            if (i == TRANSMIT_COUNT - 1) {
+                printf("Sending stop, [100/100] CAN ID: ");
+                printf(CYAN_TEXT "0x%03X", canid);
+                printf(RESET_COLOR ", Payload: ");
+                printf(CYAN_TEXT "0x%016llX", counter);
+                printf(RESET_COLOR"\n");
+            }
             send_can_packet(socket,addr, tx_frame.data, 8, canid);
         }
 

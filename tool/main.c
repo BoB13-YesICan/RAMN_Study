@@ -15,6 +15,8 @@ char interface[IFNAMSIZ];
 int attack_code;
 int canid;
 int time_diff;
+int variable_reset = 0;
+int end_program = 0;
 
 void clear_read_buffer() {
     while(getchar()!='\n');
@@ -33,12 +35,12 @@ void startpage() {
     printf("|  |_)  |       /  ^  \\    |  \\  /  | |   \\|  | \n");
     printf("|      /       /  /_\\  \\   |  |\\/|  | |  . `  | \n");
     printf("|  |\\  \\----. /  _____  \\  |  |  |  | |  |\\   | \n");
-    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_1.0\n");
+    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_1.21\n");
     printf("                                               team.YESICAN\n");
     printf(RESET_COLOR);
     
     printf(RED_TEXT);
-    printf("press 'ctrl+Z' to exit program\npress 'ctrl+C' to go main menu while attack\n");
+    printf("press 'm' to go main menu while attack\n");
     printf(RESET_COLOR);
 }
 
@@ -53,32 +55,40 @@ void print_get_attack_codes(void) {
 }
 
 void get_attack_variables() {
-    print_get_attack_codes();
-    scanf("%d", &attack_code);
-    if (attack_code < 1 || attack_code > 8) {
-        printf("\nInvalid attack code. Please try again.\n\n");
-        get_attack_variables();
+    //reset variables to defaule values && set Fild Descriptor to blocking mode
+    attack_code = NULL;
+    canid = NULL;
+    time_diff = NULL;
+    interface[IFNAMSIZ] = '\0';
+    set_blocking(STDIN_FILENO);
+
+    while (1) {
+        print_get_attack_codes();
+        scanf("%d", &attack_code);
+        if (attack_code >= 1 && attack_code <= 8) break;
+        printf("\nInvalid attack code, Please try again.\n\n");
     }
 
     printf("## Enter CAN interface name [e.g.:vcan0]: ");
     scanf("%s", interface);
 
-    printf("## Enter CAN ID (in hexadecimal, [e.g.:0x100]): ");
-    scanf("%x", &canid);
-    if (canid < 0x000 || canid > 0xfff) {
-        printf("\nInvalid CAN ID. Please try again.\n\n");
-        get_attack_variables();
+    while (1) {
+        printf("## Enter CAN ID (in hexadecimal, [e.g.:0x100]): ");
+        scanf("%x", &canid);
+        if (canid >= 0x000 && canid <= 0xfff) break;
+        printf("\nInvalid CAN ID, Please try again.\n\n");
     }
 
-    printf("## Enter time difference (in ms), [enter 0 to send once]: ");
-    scanf("%d", &time_diff);
-    if ((time_diff < 0) || (time_diff > 100000)) {
-        printf("\nInvalid time difference. Please try again.\n\n");
-        get_attack_variables();
+    while (1) {
+        printf("## Enter time difference (in ms), [enter 0 to send once]: ");
+        scanf("%d", &time_diff);
+        if ((time_diff >= 0) || (time_diff <= 100000)) break;
+        printf("\nInvalid time difference, Please try again.\n\n");
     }
 }
 
-int main() {
+void attack_program() {
+    
     startpage();
     //get user input
     get_attack_variables();
@@ -110,8 +120,15 @@ int main() {
 
     //call attack_packet_sender
     attack_packet_sender(s, &addr, attack_code, canid, time_diff);
-    
     //close the socket
     close(s);
+}
+
+
+int main() {
+    while(1) {
+        attack_program();
+        usleep(2000000);
+    }
     return 0;
 }

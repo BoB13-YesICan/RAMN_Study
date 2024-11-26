@@ -8,6 +8,7 @@ SRC = main.c \
       attack_packet_sender.c \
       can_sender.c \
       payloads.c \
+      nonblocking.c \
       attack-functions/dos.c \
       attack-functions/fuzzing.c \
       attack-functions/msq.c \

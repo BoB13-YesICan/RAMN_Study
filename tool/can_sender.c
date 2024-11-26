@@ -29,7 +29,7 @@ void send_can_packet_showpayload(int socket, struct sockaddr_can *addr, unsigned
     if (sendto(socket, &frame, sizeof(struct can_frame), 0, (struct sockaddr *)addr, sizeof(*addr)) != sizeof(struct can_frame)) {
         perror("CAN packet send failed");
     } else {
-        printf("CAN packet sent with ID:");
+        printf("CAN packet sent with ID: ");
         printf(CYAN_TEXT"0x%X", can_id);
         printf(RESET_COLOR" && Data: ");
         printf(CYAN_TEXT);
