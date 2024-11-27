@@ -5,11 +5,6 @@
 all_headers.h
 ==================================================================*/
 
-/*
-gcc -Wall -Wextra -g -pthread -I. -o attackRAMN main.c attack_packet_sender.c can_sender.c payloads.c attack-functions/dos.c attack-functions/fuzzing.c attack-functions/msq.c attack-functions/replay.c attack-functions/suspension.c
-
-*/
-
 //standard headers
 #include <stdio.h>
 #include <stdlib.h>

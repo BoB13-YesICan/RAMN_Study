@@ -35,7 +35,7 @@ void startpage() {
     printf("|  |_)  |       /  ^  \\    |  \\  /  | |   \\|  | \n");
     printf("|      /       /  /_\\  \\   |  |\\/|  | |  . `  | \n");
     printf("|  |\\  \\----. /  _____  \\  |  |  |  | |  |\\   | \n");
-    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_1.21\n");
+    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_1.211\n");
     printf("                                               team.YESICAN\n");
     printf(RESET_COLOR);
     
@@ -128,6 +128,8 @@ void attack_program() {
 int main() {
     while(1) {
         attack_program();
+        printf(RED_TEXT"====================return to main======================\n");
+        printf(RESET_COLOR"\n");
         usleep(2000000);
     }
     return 0;

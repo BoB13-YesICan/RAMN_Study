@@ -46,7 +46,8 @@ void dos_dos(int socket, struct sockaddr_can *addr, int canid, int time_diff){
                 memset(buf, 0, sizeof(buf));
                 if (read(STDIN_FILENO, buf, sizeof(buf)) > 0) {
                     if (buf[0] == 'm') {
-                        printf("'m' detected, returning to main menu\n");
+                        printf(RED_TEXT"====================='m' detected=======================\n");
+                        printf(RESET_COLOR"\n");
                         break;
                     }
                 }
