@@ -25,9 +25,7 @@ void dos_dos(int socket, struct sockaddr_can *addr, int canid, int time_diff){
     int ret;
     char buf[64];
     set_nonblocking(STDIN_FILENO);
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
+    struct timeval timeout = {0, 0};
 
     do {
         send_can_packet(socket, addr, dos.payload1, dos.payload1_len, canid);

@@ -63,7 +63,7 @@ void fuzzing_find_uds(int socket, struct sockaddr_can *addr, int canid, int time
 
     struct can_frame rx_frame;
     struct timeval rx_timeout = {1, 0}; // receive timeout set (1sec)
-    struct timeval timeout = {0, 1000 * time_diff};
+    struct timeval timeout = {0, 0};
     struct timespec start, current;
     int current_canid = (canid - 1);
 
@@ -83,7 +83,7 @@ void fuzzing_find_uds(int socket, struct sockaddr_can *addr, int canid, int time
             perror("select fail");
             break;
         } else if (ret == 0) {
-            ₩ send_can_packet_showpayload(socket, addr, fuzzing.payload1, fuzzing.payload1_len, current_canid);
+            send_can_packet_showpayload(socket, addr, fuzzing.payload1, fuzzing.payload1_len, current_canid);
 
             clock_gettime(CLOCK_REALTIME, &start);
             do {
@@ -117,7 +117,8 @@ void fuzzing_find_uds(int socket, struct sockaddr_can *addr, int canid, int time
                 }
             }
         }
-    } while (current_canid < END_CANID);₩  
+        usleep (1000 * time_diff);
+    } while (current_canid < END_CANID);
 }
 
 
@@ -135,12 +136,38 @@ void fuzzing_random_canid(int socket, struct sockaddr_can *addr, int canid, int 
     int ret;
     char buf[64];
     set_nonblocking(STDIN_FILENO);
-    struct timeval timeout = {0, 1000 * time_diff};
+    struct timeval timeout = {0, 0};
+    int tx_can_id = canid;
 
+    do {
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        ret = select(STDIN_FILENO +1, &readfds, NULL, NULL, &timeout);
 
+        if (ret == -1) {
+            perror("select fail");
+            break;
+        } else if (ret == 0) {
+            send_can_packet(socket, addr, fuzzing.payload3, fuzzing.payload3_len, tx_can_id);
+            tx_can_id ++;
+        } else {
+            if (FD_ISSET(STDIN_FILENO, &readfds)) {
+                memset(buf, 0, sizeof(buf));
+                if (read(STDIN_FILENO, buf, sizeof(buf)) > 0) {
+                    if (buf[0] == 'm') {
+                        printf(RED_TEXT"====================='m' detected=======================\n");
+                        printf(RESET_COLOR"\n");
+                        break;
+                    }
+                }
+            }
+        }
+        if (time_diff == 0) break;
+        usleep (1000 * time_diff);
+    } while(tx_can_id <= END_CANID);
 }
 
-void fuzzing_random_payload(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
+void fuzzing_random_payload_logic(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
     struct can_frame tx_frame;
     uint64_t counter = START_PAYLOAD;
     do {
@@ -176,4 +203,75 @@ void fuzzing_random_payload(int socket, struct sockaddr_can *addr, int canid, in
         usleep(time_diff*1000);
     }while (1);
 
+}
+
+void fuzzing_random_payload (int socket, struct sockaddr_can *addr, int canid, int time_diff) {
+    fd_set readfds;
+    int ret;
+    char buf [64];
+    set_nonblocking(STDIN_FILENO);
+    struct timeval timeout = {0, 0};
+    struct can_frame tx_frame;
+    uint64_t counter = START_PAYLOAD;
+
+    // tx_frame.data[0] = (counter >> 56) & 0xFF;
+    // tx_frame.data[1] = (counter >> 48) & 0xFF;
+    // tx_frame.data[2] = (counter >> 40) & 0xFF;
+    // tx_frame.data[3] = (counter >> 32) & 0xFF;
+    // tx_frame.data[4] = (counter >> 24) & 0xFF;
+    // tx_frame.data[5] = (counter >> 16) & 0xFF;
+    // tx_frame.data[6] = (counter >> 8) & 0xFF;
+    // tx_frame.data[7] = counter & 0xFF;
+
+    do {
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
+
+        tx_frame.data[0] = (counter >> 56) & 0xFF;
+        tx_frame.data[1] = (counter >> 48) & 0xFF;
+        tx_frame.data[2] = (counter >> 40) & 0xFF;
+        tx_frame.data[3] = (counter >> 32) & 0xFF;
+        tx_frame.data[4] = (counter >> 24) & 0xFF;
+        tx_frame.data[5] = (counter >> 16) & 0xFF;
+        tx_frame.data[6] = (counter >> 8) & 0xFF;
+        tx_frame.data[7] = counter & 0xFF;
+        
+        if (ret == -1) {
+            perror("select fail");
+            break;
+        } else if (ret == 0) {
+            for (int i = 0; i < TRANSMIT_COUNT; i++) {
+                if (i = 0) {
+                    printf("Sending start, [1/100] CAN ID: ");
+                    printf(CYAN_TEXT"0x%03X", canid);
+                    printf(RESET_COLOR", Payload: ");
+                    printf(CYAN_TEXT"0x%016llX\n", counter);
+                    printf(RESET_COLOR);
+                }
+                if (i == TRANSMIT_COUNT - 1) {
+                printf("Sending stop, [100/100] CAN ID: ");
+                printf(CYAN_TEXT "0x%03X", canid);
+                printf(RESET_COLOR ", Payload: ");
+                printf(CYAN_TEXT "0x%016llX", counter);
+                printf(RESET_COLOR"\n");
+                }
+                send_can_packet(socket, addr, tx_frame.data, 8, canid);
+            }
+            counter ++;
+        } else {
+            if (FD_ISSET(STDIN_FILENO, &readfds)) {
+                memset(buf, 0, sizeof(buf));
+                if (read(STDIN_FILENO, buf, sizeof(buf)) > 0) {
+                    if (buf[0] == 'm') {
+                        printf(RED_TEXT"====================='m' detected=======================\n");
+                        printf(RESET_COLOR"\n");
+                        break;
+                    }
+                }
+            }
+        }
+        if(time_diff == 0) break;
+        usleep (1000 * time_diff);
+    } while(1);
 }
