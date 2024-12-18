@@ -35,7 +35,7 @@ void startpage() {
     printf("|  |_)  |       /  ^  \\    |  \\  /  | |   \\|  | \n");
     printf("|      /       /  /_\\  \\   |  |\\/|  | |  . `  | \n");
     printf("|  |\\  \\----. /  _____  \\  |  |  |  | |  |\\   | \n");
-    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_UdsFuzzer1.151\n");
+    printf("| _| `._____|/__/     \\__\\ |__|  |__| |__| \\__|. ver_UdsFuzzer1.224\n");
     printf("                                               team.YESICAN\n");
     printf(RESET_COLOR);
     
@@ -46,11 +46,11 @@ void startpage() {
 
 void print_get_attack_codes(void) {
     printf("=====================attack  codes======================\n");
-    printf("(1): dos_dos                (5): fuzzing_random_canid\n");
-    printf("(2): replay_replay          (6): fuzzing_random_payload\n");
-    printf("(3): replay_suddenaccel     (7): suspension_resetecu\n");
-    printf("(4): fuzzing_find_uds       (8): msq_msq[masquerade]\n");
-    printf("(9): fuzzing_uds_service       (10): something..\n");
+    printf("(1): dos_dos                (2): replay_replay\n");
+    printf("(3): replay_suddenaccel     (4): fuzzing_find_uds\n");
+    printf("(5): fuzzing_random_canid   (6): fuzzing_random_payload\n");
+    printf("(7): suspension_resetecu    (8): msq_msq[masquerade]\n");
+    printf("(9): fuzzing_uds_service    (10): something..\n");
     printf("========================================================\n\n");
     printf("## Enter attack code you want: ");
 }
