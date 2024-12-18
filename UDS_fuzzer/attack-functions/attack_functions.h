@@ -12,6 +12,7 @@ void fuzzing_random_payload(int socket, struct sockaddr_can *addr, int canid, in
 void suspension_resetecu(int socket, struct sockaddr_can *addr, int canid, int time_diff);
 void msq_msq(int socket, struct sockaddr_can *addr, int canid, int time_diff);
 void mode_f(int socket, struct sockaddr_can *addr, int canid, int time_diff);
+void mode_fs(int socket, struct sockaddr_can *addr, int canid, int time_diff);
 void keychange(int socket, struct sockaddr_can *addr, int canid, int time_diff);
 
 #endif // ATTACK_FUNCTIONS_H

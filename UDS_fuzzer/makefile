@@ -13,6 +13,7 @@ TARGET = uds_fuzzer
 # 소스 파일 목록
 SRCS = attack_packet_sender.c \
        attack-functions/mode_f.c \
+       attack-functions/mode_fs.c \
        attack-functions/dos.c \
        attack-functions/fuzzing.c \
        attack-functions/replay.c \

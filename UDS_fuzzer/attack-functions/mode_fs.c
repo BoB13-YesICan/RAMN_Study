@@ -1,13 +1,19 @@
 /*================================================================
 mode_fs.c
-This function fuzzes UDS services for multiple CANIDs, sends all defined payloads for each service, 
-processes responses based on uds_reply, and saves output to separate CSV files.
+This function fuzzes UDS services for multiple CANIDs, sending all defined payloads for each service,
+processing responses based on uds_reply, and saving output to separate CSV files
+in the csv_multiCANID_report[timestamp] directory, with each CANID having its own subdirectory.
 =================================================================*/
 
 #include "all_headers.h"
+#include "payloads.h" // To access uds_reply and other payload structures
+#include <time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <string.h>
 
 #define SLEEP_TIME 100000 // 100,000 microseconds = 100 milliseconds
-#define MAX_CANID 0x7FF    // Maximum CANID
 
 /*================================================================
 Function Prototypes
@@ -22,79 +28,119 @@ int is_placeholder_payload(unsigned char *payload, size_t len);
 mode_fs
 =================================================================*/
 void mode_fs(int socket, struct sockaddr_can *addr, int start_canid, int time_diff) {
-    // Ensure the csv_reports directory exists
-    struct stat st = {0};
-    if (stat("csv_reports", &st) == -1) {
-        if (mkdir("csv_reports", 0700) != 0) {
-            perror("Failed to create csv_reports directory");
+    // Generate timestamp for the directory name
+    struct timeval tv_dir;
+    gettimeofday(&tv_dir, NULL);
+    struct tm *tm_info_dir = localtime(&tv_dir.tv_sec);
+    int tenths_dir = tv_dir.tv_usec / 100000; // 0.1 second unit
+
+    // Timestamp: YYYYMMDD_HHMMSS.T
+    char timestamp_dir[32];
+    snprintf(timestamp_dir, sizeof(timestamp_dir), "%04d%02d%02d_%02d%02d%02d.%d",
+             tm_info_dir->tm_year + 1900, tm_info_dir->tm_mon + 1, tm_info_dir->tm_mday,
+             tm_info_dir->tm_hour, tm_info_dir->tm_min, tm_info_dir->tm_sec, tenths_dir);
+
+    // Directory name: csv_multiCANID_report[timestamp]
+    char report_dir[256];
+    snprintf(report_dir, sizeof(report_dir), "csv_multiCANID_report[%s]", timestamp_dir);
+
+    // Create the report directory
+    struct stat st_report = {0};
+    if (stat(report_dir, &st_report) == -1) {
+        if (mkdir(report_dir, 0700) != 0) {
+            perror("Failed to create csv_multiCANID_report directory");
             return;
         }
     }
 
-    // Iterate over CANIDs from start_canid to MAX_CANID (0x7FF)
-    for(int canid = start_canid; canid <= MAX_CANID; canid++) {
-        // Dynamically construct the CSV filename based on the current CANID with timestamp
-        char csv_filename[256];
-        
-        // Get current time
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        struct tm *tm_info = localtime(&tv.tv_sec);
-        int tenths = tv.tv_usec / 100000; // 0.1초 단위
-        
-        // Timestamp format: YYYYMMDD_HHMMSS.T
-        char timestamp[32];
-        snprintf(timestamp, sizeof(timestamp), "%04d%02d%02d_%02d%02d%02d.%d",
-                 tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday,
-                 tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec, tenths);
-        
-        // Create file path: csv_reports/[CANID]_report_[timestamp].csv
-        snprintf(csv_filename, sizeof(csv_filename), "csv_reports/0x%03X_report_%s.csv", canid, timestamp);
+    printf("CSV reports will be saved in directory: %s\n", report_dir);
 
-        // Open CSV file for writing using the dynamic filename
-        FILE *csv_file = fopen(csv_filename, "w");
-        if (csv_file == NULL) {
-            perror("Failed to open CSV file");
-            continue; // Proceed to next CANID
+    // Array of pointers to all defined UDS_request structures
+    struct uds_request *all_services[] = {
+        &diagnostic_session_control,    // Service 0x10
+        &ECU_reset,                     // Service 0x11
+        &clear_diagnostic_information,  // Service 0x14
+        &read_dtc_information,          // Service 0x19
+        &read_data_by_identifier,       // Service 0x22
+        &read_memory_by_address,        // Service 0x23
+        &security_access,               // Service 0x27
+        &write_data_by_identifier,      // Service 0x2E
+        &routine_control,               // Service 0x31
+        &request_download,              // Service 0x34
+        &request_upload,                // Service 0x35
+        &transfer_data,                 // Service 0x36
+        &request_transfer_exit,         // Service 0x37
+        &write_memory_by_address_3D,    // Service 0x3D
+        &tester_present,                // Service 0x3E
+        &control_dtc_settings,          // Service 0x85
+        &link_control                   // Service 0x87
+    };
+
+    int num_all_services = sizeof(all_services) / sizeof(all_services[0]);
+
+    // Iterate over CANIDs from start_canid to 0x7FF
+    for(int current_canid = start_canid; current_canid <= 0x7FF; current_canid++) {
+        printf("\nProcessing CANID=0x%03X\n", current_canid);
+
+        // **Create Subdirectory for Each CANID**
+        char canid_dir[64];
+        snprintf(canid_dir, sizeof(canid_dir), "%s/0x%03X", report_dir, current_canid);
+
+        // Create CANID subdirectory
+        struct stat st_canid = {0};
+        if (stat(canid_dir, &st_canid) == -1) {
+            if (mkdir(canid_dir, 0700) != 0) {
+                perror("Failed to create CANID subdirectory");
+                continue;
+            }
         }
 
-        // Write CSV headers
-        fprintf(csv_file, "Timestamp,CanID,Servicename,Optionname,Answer,ErrorCode,ResponseMessage\n");
+        // **Create CSV filenames within CANID subdirectory**
+        char csv_filename_normal[256], csv_filename_psession[256], csv_filename_esession[256];
+        snprintf(csv_filename_normal, sizeof(csv_filename_normal), "%s/0x%03X_normal.csv", canid_dir, current_canid);
+        snprintf(csv_filename_psession, sizeof(csv_filename_psession), "%s/0x%03X_Psession.csv", canid_dir, current_canid);
+        snprintf(csv_filename_esession, sizeof(csv_filename_esession), "%s/0x%03X_Esession.csv", canid_dir, current_canid);
 
-        // Set socket receive timeout to 100ms
+        // **Open CSV files for writing**
+        FILE *normal_csv = fopen(csv_filename_normal, "w");
+        if (normal_csv == NULL) {
+            perror("Failed to open Normal CSV file");
+            continue;
+        }
+        fprintf(normal_csv, "Timestamp,CanID,Servicename,Optionname,Answer,ErrorCode,ResponseMessage\n");
+
+        FILE *Psession_csv = fopen(csv_filename_psession, "w");
+        if (Psession_csv == NULL) {
+            perror("Failed to open Psession CSV file");
+            fclose(normal_csv);
+            continue;
+        }
+        fprintf(Psession_csv, "Timestamp,CanID,Servicename,Optionname,Answer,ErrorCode,ResponseMessage\n");
+
+        FILE *Esession_csv = fopen(csv_filename_esession, "w");
+        if (Esession_csv == NULL) {
+            perror("Failed to open Esession CSV file");
+            fclose(normal_csv);
+            fclose(Psession_csv);
+            continue;
+        }
+        fprintf(Esession_csv, "Timestamp,CanID,Servicename,Optionname,Answer,ErrorCode,ResponseMessage\n");
+
+        // **Set socket receive timeout to 100ms**
         struct timeval timeout = {0, SLEEP_TIME}; // 0 seconds, 100,000 microseconds
         if (setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
             perror("Set socket options error");
-            fclose(csv_file);
-            continue; // Proceed to next CANID
+            fclose(normal_csv);
+            fclose(Psession_csv);
+            fclose(Esession_csv);
+            continue;
         }
 
-        // Array of pointers to all defined UDS_request structures
-        struct uds_request *services[] = {
-            &diagnostic_session_control,    // Service 0x10
-            &ECU_reset,                     // Service 0x11
-            &clear_diagnostic_information,  // Service 0x14
-            &read_dtc_information,          // Service 0x19
-            &read_data_by_identifier,       // Service 0x22
-            &read_memory_by_address,        // Service 0x23
-            &security_access,               // Service 0x27
-            &write_data_by_identifier,      // Service 0x2E
-            &routine_control,               // Service 0x31
-            &request_download,              // Service 0x34
-            &request_upload,                // Service 0x35
-            &transfer_data,                 // Service 0x36
-            &request_transfer_exit,         // Service 0x37
-            &write_memory_by_address_3D,    // Service 0x3D
-            &tester_present,                // Service 0x3E
-            &control_dtc_settings,          // Service 0x85
-            &link_control                   // Service 0x87
-        };
-
-        int num_services = sizeof(services) / sizeof(services[0]);
-
-        // Iterate through each UDS service
-        for(int s = 0; s < num_services; s++) {
-            struct uds_request *service = services[s];
+        /*================================================================
+        Normal Session: Send all services including the focused payload
+        =================================================================*/
+        for(int s = 0; s < num_all_services; s++) {
+            struct uds_request *service = all_services[s];
             const char *servicename = NULL;
 
             // Determine the service name based on the pointer
@@ -164,12 +210,188 @@ void mode_fs(int socket, struct sockaddr_can *addr, int start_canid, int time_di
                 }
 
                 // Send the current payload and process the response
-                send_payload_and_process_response(socket, addr, canid, servicename, optionname, current_payload, payload_len, csv_file);
+                send_payload_and_process_response(socket, addr, current_canid, servicename, optionname, current_payload, payload_len, normal_csv);
             }
         }
 
-        // Close the CSV file
-        fclose(csv_file);
+        /*================================================================
+        Psession (Programming Session):
+        1. Send the Psession initialization payload (0x02, 0x10, 0x02)
+        2. Send all payloads excluding the focused payload
+        =================================================================*/
+        // 1. Send Psession initialization payload
+        unsigned char Psession_payload[] = {0x02, 0x10, 0x02};
+        send_payload_and_process_response(socket, addr, current_canid, "Diagnostic Session Control", "Programming Session", Psession_payload, sizeof(Psession_payload), Psession_csv);
+
+        // 2. Send all services except Diagnostic Session Control
+        for(int s = 0; s < num_all_services; s++) {
+            struct uds_request *service = all_services[s];
+            // Skip Diagnostic Session Control
+            if (service == &diagnostic_session_control) continue;
+
+            const char *servicename = NULL;
+
+            // Determine the service name based on the pointer
+            if (service == &ECU_reset) servicename = "ECU Reset";
+            else if (service == &clear_diagnostic_information) servicename = "Clear Diagnostic Information";
+            else if (service == &read_dtc_information) servicename = "Read DTC Information";
+            else if (service == &read_data_by_identifier) servicename = "Read Data By Identifier";
+            else if (service == &read_memory_by_address) servicename = "Read Memory By Address";
+            else if (service == &security_access) servicename = "Security Access";
+            else if (service == &write_data_by_identifier) servicename = "Write Data By Identifier";
+            else if (service == &routine_control) servicename = "Routine Control";
+            else if (service == &request_download) servicename = "Request Download";
+            else if (service == &request_upload) servicename = "Request Upload";
+            else if (service == &transfer_data) servicename = "Transfer Data";
+            else if (service == &request_transfer_exit) servicename = "Request Transfer Exit";
+            else if (service == &write_memory_by_address_3D) servicename = "Write Memory By Address (0x3D)";
+            else if (service == &tester_present) servicename = "Tester Present";
+            else if (service == &control_dtc_settings) servicename = "Control DTC Settings";
+            else if (service == &link_control) servicename = "Link Control";
+            else servicename = "Unknown Service";
+
+            // Iterate through each payload in the service
+            for(int p = 0; p < 5; p++) { // payload1 to payload5
+                unsigned char *current_payload = NULL;
+                size_t payload_len = 0;
+                const char *optionname = NULL;
+
+                switch(p) {
+                    case 0:
+                        current_payload = service->payload1;
+                        optionname = service->service1;
+                        payload_len = (service->payload1_len > 0) ? service->payload1_len : 0;
+                        break;
+                    case 1:
+                        current_payload = service->payload2;
+                        optionname = service->service2;
+                        payload_len = (service->payload2_len > 0) ? service->payload2_len : 0;
+                        break;
+                    case 2:
+                        current_payload = service->payload3;
+                        optionname = service->service3;
+                        payload_len = (service->payload3_len > 0) ? service->payload3_len : 0;
+                        break;
+                    case 3:
+                        current_payload = service->payload4;
+                        optionname = service->service4;
+                        payload_len = (service->payload4_len > 0) ? service->payload4_len : 0;
+                        break;
+                    case 4:
+                        current_payload = service->payload5;
+                        optionname = service->service5;
+                        payload_len = (service->payload5_len > 0) ? service->payload5_len : 0;
+                        break;
+                    default:
+                        continue;
+                }
+
+                // Skip if payload length is 0 (placeholder)
+                if(payload_len == 0 || is_placeholder_payload(current_payload, payload_len)) {
+                    continue;
+                }
+
+                // Optional: Sleep between payloads
+                if (time_diff > 0) {
+                    usleep(time_diff * 1000); // Convert ms to µs
+                }
+
+                // Send the current payload and process the response
+                send_payload_and_process_response(socket, addr, current_canid, servicename, optionname, current_payload, payload_len, Psession_csv);
+            }
+        }
+
+        /*================================================================
+        Esession (Extended Session):
+        1. Send the Esession initialization payload (0x02, 0x10, 0x03)
+        2. Send all payloads excluding the focused payload
+        =================================================================*/
+        // 1. Send Esession initialization payload
+        unsigned char Esession_payload[] = {0x02, 0x10, 0x03};
+        send_payload_and_process_response(socket, addr, current_canid, "Diagnostic Session Control", "Extended Session", Esession_payload, sizeof(Esession_payload), Esession_csv);
+
+        // 2. Send all services except Diagnostic Session Control
+        for(int s = 0; s < num_all_services; s++) {
+            struct uds_request *service = all_services[s];
+            // Skip Diagnostic Session Control
+            if (service == &diagnostic_session_control) continue;
+
+            const char *servicename = NULL;
+
+            // Determine the service name based on the pointer
+            if (service == &ECU_reset) servicename = "ECU Reset";
+            else if (service == &clear_diagnostic_information) servicename = "Clear Diagnostic Information";
+            else if (service == &read_dtc_information) servicename = "Read DTC Information";
+            else if (service == &read_data_by_identifier) servicename = "Read Data By Identifier";
+            else if (service == &read_memory_by_address) servicename = "Read Memory By Address";
+            else if (service == &security_access) servicename = "Security Access";
+            else if (service == &write_data_by_identifier) servicename = "Write Data By Identifier";
+            else if (service == &routine_control) servicename = "Routine Control";
+            else if (service == &request_download) servicename = "Request Download";
+            else if (service == &request_upload) servicename = "Request Upload";
+            else if (service == &transfer_data) servicename = "Transfer Data";
+            else if (service == &request_transfer_exit) servicename = "Request Transfer Exit";
+            else if (service == &write_memory_by_address_3D) servicename = "Write Memory By Address (0x3D)";
+            else if (service == &tester_present) servicename = "Tester Present";
+            else if (service == &control_dtc_settings) servicename = "Control DTC Settings";
+            else if (service == &link_control) servicename = "Link Control";
+            else servicename = "Unknown Service";
+
+            // Iterate through each payload in the service
+            for(int p = 0; p < 5; p++) { // payload1 to payload5
+                unsigned char *current_payload = NULL;
+                size_t payload_len = 0;
+                const char *optionname = NULL;
+
+                switch(p) {
+                    case 0:
+                        current_payload = service->payload1;
+                        optionname = service->service1;
+                        payload_len = (service->payload1_len > 0) ? service->payload1_len : 0;
+                        break;
+                    case 1:
+                        current_payload = service->payload2;
+                        optionname = service->service2;
+                        payload_len = (service->payload2_len > 0) ? service->payload2_len : 0;
+                        break;
+                    case 2:
+                        current_payload = service->payload3;
+                        optionname = service->service3;
+                        payload_len = (service->payload3_len > 0) ? service->payload3_len : 0;
+                        break;
+                    case 3:
+                        current_payload = service->payload4;
+                        optionname = service->service4;
+                        payload_len = (service->payload4_len > 0) ? service->payload4_len : 0;
+                        break;
+                    case 4:
+                        current_payload = service->payload5;
+                        optionname = service->service5;
+                        payload_len = (service->payload5_len > 0) ? service->payload5_len : 0;
+                        break;
+                    default:
+                        continue;
+                }
+
+                // Skip if payload length is 0 (placeholder)
+                if(payload_len == 0 || is_placeholder_payload(current_payload, payload_len)) {
+                    continue;
+                }
+
+                // Optional: Sleep between payloads
+                if (time_diff > 0) {
+                    usleep(time_diff * 1000); // Convert ms to µs
+                }
+
+                // Send the current payload and process the response
+                send_payload_and_process_response(socket, addr, current_canid, servicename, optionname, current_payload, payload_len, Esession_csv);
+            }
+        }
+
+        // **Close all CSV files after processing all payloads for the current CANID**
+        fclose(normal_csv);
+        fclose(Psession_csv);
+        fclose(Esession_csv);
     }
 
 /*================================================================
@@ -196,39 +418,46 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
     const char *response_message = "-";
     const char *answer_type = "-";
     unsigned char error_code = 0x00;
+    
+    // Flag to track if any response was received
+    int response_received = 0;
 
     // Extract service ID from the sent payload (assuming payload[1] is service ID)
+    if (payload_len < 2) {
+        printf("Invalid payload length for service: %s, option: %s\n", servicename, optionname);
+        return;
+    }
     unsigned char service_id = payload[1];
-
+    
     // Prepare CAN frame for transmission
     struct can_frame tx_frame;
     memset(&tx_frame, 0, sizeof(struct can_frame));
     tx_frame.can_id = canid;
     tx_frame.can_dlc = (payload_len > 8) ? 8 : payload_len;
     memcpy(tx_frame.data, payload, tx_frame.can_dlc);
-
+    
     // Log the CAN frame being sent
     printf("Sending CAN frame to CANID=0x%03X with payload length=%zu\n", canid, payload_len);
     
-    // 전송된 페이로드 내용을 출력하여 디버깅
+    // Print TX payloads
     printf("Payload: ");
     for(int i = 0; i < tx_frame.can_dlc; i++) {
         printf("0x%02X ", tx_frame.data[i]);
     }
     printf("\n");
-
+    
     // Send the CAN frame
     if (write(socket, &tx_frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
         perror("Write");
         return;
     }
-
+    
     // Record start time
     clock_gettime(CLOCK_REALTIME, &start);
-
+    
     // Calculate expected response CANID
     int expected_canid = canid + 0x008;
-
+    
     // Continuously read until timeout
     while(1) {
         int nbytes = read(socket, &rx_frame, sizeof(struct can_frame));
@@ -244,6 +473,10 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
             // Check if the received CANID matches the expected CANID
             if(rx_frame.can_id == expected_canid) { 
                 // Check payload[1] for response type
+                if(rx_frame.can_dlc < 2) {
+                    printf("Received payload too short from CANID=0x%03X\n", rx_frame.can_id);
+                    continue;
+                }
                 if(rx_frame.data[1] == (service_id + 0x40)) { // Positive Response
                     answer_type = "Positive";
                     // ResponseMessage remains '-' as per requirement
@@ -309,22 +542,24 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
                     // Unknown response type, ignore
                     continue;
                 }
-
-                // 전송된 페이로드 내용을 출력하여 디버깅
+                
+                // Mark that a response was received
+                response_received = 1;
+                
                 printf("Received %s from CANID=0x%03X, Error Code=0x%02X, Message=%s\n",
                        answer_type, rx_frame.can_id, error_code, response_message);
                 
-                // Timestamp generation (0.1초 단위)
-                struct tm *tm_info;
+                // Generate timestamp: YYYY-MM-DD HH:MM:SS.T
+                struct tm *tm_info_resp;
                 time_t now_sec = time(NULL);
-                tm_info = localtime(&now_sec);
+                tm_info_resp = localtime(&now_sec);
                 struct timeval now_tv;
                 gettimeofday(&now_tv, NULL);
-                int tenths = now_tv.tv_usec / 100000; // 0.1초 단위
+                int tenths_now = now_tv.tv_usec / 100000; // 0.1 second unit
                 snprintf(timestamp, sizeof(timestamp), "%04d-%02d-%02d %02d:%02d:%02d.%d",
-                        tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday,
-                        tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec, tenths);
-
+                        tm_info_resp->tm_year + 1900, tm_info_resp->tm_mon + 1, tm_info_resp->tm_mday,
+                        tm_info_resp->tm_hour, tm_info_resp->tm_min, tm_info_resp->tm_sec, tenths_now);
+                
                 // Write to CSV only if response is Positive or Reject
                 if(strcmp(answer_type, "-") != 0) {
                     if(strcmp(answer_type, "Reject") == 0) {
@@ -343,14 +578,36 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
             }
             // Else: Ignore other CANIDs
         }
-
+        
         // Check elapsed time
         clock_gettime(CLOCK_REALTIME, &current);
         long elapsed_us = (current.tv_sec - start.tv_sec) * 1000000 + 
                           (current.tv_nsec - start.tv_nsec) / 1000;
         if(elapsed_us >= SLEEP_TIME) {
             // Timeout reached
-            break;
+            // No action needed here as loop will naturally exit
+        }
+        
+        // Check if no response was received
+        if(!response_received) {
+            // Generate timestamp: YYYY-MM-DD HH:MM:SS.T
+            struct tm *tm_info_no_resp;
+            time_t now_sec_no_resp = time(NULL);
+            tm_info_no_resp = localtime(&now_sec_no_resp);
+            struct timeval now_tv_no_resp;
+            gettimeofday(&now_tv_no_resp, NULL);
+            int tenths_now_no_resp = now_tv_no_resp.tv_usec / 100000; // 0.1 second unit
+            snprintf(timestamp, sizeof(timestamp), "%04d-%02d-%02d %02d:%02d:%02d.%d",
+                    tm_info_no_resp->tm_year + 1900, tm_info_no_resp->tm_mon + 1, tm_info_no_resp->tm_mday,
+                    tm_info_no_resp->tm_hour, tm_info_no_resp->tm_min, tm_info_no_resp->tm_sec, tenths_now_no_resp);
+            
+            printf("No Response received for service: %s, option: %s\n", servicename, optionname);
+            
+            // Write "No Response" to CSV
+            fprintf(csv_file, "\"%s\",0x%03X,\"%s\",\"%s\",\"No Response\",-,\"-\"\n", 
+                    timestamp, canid, servicename, optionname);
+            fflush(csv_file); // Ensure data is written immediately
         }
     }
+}
 }

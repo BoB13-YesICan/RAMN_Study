@@ -12,12 +12,13 @@ Parameters:
 - time_diff: time difference between CAN packets in milliseconds
 ==================================================================*/
 
-/*================================================================
-(1): dos_dos                (5): fuzzing_random_canid
-(2): replay_replay          (6): fuzzing_random_payload
-(3): replay_suddenaccel     (7): suspension_resetecu
-(4): fuzzing_find_uds       (8): msq_msq[masquerade]
-==================================================================*/
+// printf("=====================attack  codes======================\n");
+// printf("(1): dos_dos                (2): replay_replay\n");
+// printf("(3): replay_suddenaccel     (4): fuzzing_find_uds\n");
+// printf("(5): fuzzing_random_canid   (6): fuzzing_random_payload\n");
+// printf("(7): suspension_resetecu    (8): msq_msq[masquerade]\n");
+// printf("(9): fuzzing_uds_service    (10): fuzzing_uds_sid_multicanid\n");
+// printf("========================================================\n\n");
 
 void attack_packet_sender(int socket, struct sockaddr_can *addr, int attack_code, int canid, int time_diff) {
 
@@ -55,6 +56,8 @@ void attack_packet_sender(int socket, struct sockaddr_can *addr, int attack_code
             mode_f(socket, addr, canid, time_diff);
             break;
         case 10:
+            mode_fs(socket, addr, canid, time_diff);
+            break;
 
         default:
             printf("Invalid attack code\n");

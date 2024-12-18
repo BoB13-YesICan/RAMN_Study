@@ -24,8 +24,8 @@ mode_f
 void mode_f(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
     // Dynamically construct the CANID directory name based on the input CANID in hexadecimal
     char canid_dir[256];
-    snprintf(canid_dir, sizeof(canid_dir), "csv_reports/0x%03X", canid); // Set directory name in hexadecimal (e.g., 0x09B)
-    
+    snprintf(canid_dir, sizeof(canid_dir), "csv_reports/0x%03X", canid); // e.g., 0x09B
+
     // Ensure the csv_reports directory exists
     struct stat st = {0};
     if (stat("csv_reports", &st) == -1) {
@@ -214,9 +214,10 @@ void mode_f(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
     1. Send the Psession initialization payload (0x02, 0x10, 0x02)
     2. Send all payloads excluding the focused payload
     =================================================================*/
-    
+
     // 1. Send Psession initialization payload
     unsigned char Psession_payload[] = {0x02, 0x10, 0x02};
+    send_payload_and_process_response(socket, addr, canid, "Diagnostic Session Control", "Programming Session", Psession_payload, sizeof(Psession_payload), Psession_csv);
 
     // 2. Send all services except Diagnostic Session Control
     for(int s = 0; s < num_all_services; s++) {
@@ -292,7 +293,6 @@ void mode_f(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
             }
 
             // Send the current payload and process the response
-            send_payload_and_process_response(socket, addr, canid, "Diagnostic Session Control", "Programming Session", Psession_payload, sizeof(Psession_payload), Psession_csv);
             send_payload_and_process_response(socket, addr, canid, servicename, optionname, current_payload, payload_len, Psession_csv);
         }
     }
@@ -302,9 +302,10 @@ void mode_f(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
     1. Send the Esession initialization payload (0x02, 0x10, 0x03)
     2. Send all payloads excluding the focused payload
     =================================================================*/
-    
+
     // 1. Send Esession initialization payload
     unsigned char Esession_payload[] = {0x02, 0x10, 0x03};
+    send_payload_and_process_response(socket, addr, canid, "Diagnostic Session Control", "Extended Session", Esession_payload, sizeof(Esession_payload), Esession_csv);
 
     // 2. Send all services except Diagnostic Session Control
     for(int s = 0; s < num_all_services; s++) {
@@ -380,7 +381,6 @@ void mode_f(int socket, struct sockaddr_can *addr, int canid, int time_diff) {
             }
 
             // Send the current payload and process the response
-            send_payload_and_process_response(socket, addr, canid, "Diagnostic Session Control", "Extended Session", Esession_payload, sizeof(Esession_payload), Esession_csv);
             send_payload_and_process_response(socket, addr, canid, servicename, optionname, current_payload, payload_len, Esession_csv);
         }
     }
@@ -415,17 +415,20 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
     const char *response_message = "-";
     const char *answer_type = "-";
     unsigned char error_code = 0x00;
+    
+    // Flag to track if any response was received
+    int response_received = 0; // <--- 추가된 부분
 
     // Extract service ID from the sent payload (assuming payload[1] is service ID)
     unsigned char service_id = payload[1];
-
+    
     // Prepare CAN frame for transmission
     struct can_frame tx_frame;
     memset(&tx_frame, 0, sizeof(struct can_frame));
     tx_frame.can_id = canid;
     tx_frame.can_dlc = (payload_len > 8) ? 8 : payload_len;
     memcpy(tx_frame.data, payload, tx_frame.can_dlc);
-
+    
     // Log the CAN frame being sent
     printf("Sending CAN frame to CANID=0x%03X with payload length=%zu\n", canid, payload_len);
     
@@ -435,19 +438,19 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
         printf("0x%02X ", tx_frame.data[i]);
     }
     printf("\n");
-
+    
     // Send the CAN frame
     if (write(socket, &tx_frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
         perror("Write");
         return;
     }
-
+    
     // Record start time
     clock_gettime(CLOCK_REALTIME, &start);
-
+    
     // Calculate expected response CANID
     int expected_canid = canid + 0x008;
-
+    
     // Continuously read until timeout
     while(1) {
         int nbytes = read(socket, &rx_frame, sizeof(struct can_frame));
@@ -528,21 +531,24 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
                     // Unknown response type, ignore
                     continue;
                 }
-
+                
+                // Mark that a response was received
+                response_received = 1; // <--- 추가된 부분
+                
                 printf("Received %s from CANID=0x%03X, Error Code=0x%02X, Message=%s\n",
                        answer_type, rx_frame.can_id, error_code, response_message);
                 
                 // Generate timestamp: YYYY-MM-DD HH:MM:SS.T
-                struct tm *tm_info;
+                struct tm *tm_info_resp;
                 time_t now_sec = time(NULL);
-                tm_info = localtime(&now_sec);
+                tm_info_resp = localtime(&now_sec);
                 struct timeval now_tv;
                 gettimeofday(&now_tv, NULL);
                 int tenths_now = now_tv.tv_usec / 100000; // 0.1 second unit
                 snprintf(timestamp, sizeof(timestamp), "%04d-%02d-%02d %02d:%02d:%02d.%d",
-                        tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday,
-                        tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec, tenths_now);
-
+                        tm_info_resp->tm_year + 1900, tm_info_resp->tm_mon + 1, tm_info_resp->tm_mday,
+                        tm_info_resp->tm_hour, tm_info_resp->tm_min, tm_info_resp->tm_sec, tenths_now);
+                
                 // Write to CSV only if response is Positive or Reject
                 if(strcmp(answer_type, "-") != 0) {
                     if(strcmp(answer_type, "Reject") == 0) {
@@ -561,7 +567,7 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
             }
             // Else: Ignore other CANIDs
         }
-
+        
         // Check elapsed time
         clock_gettime(CLOCK_REALTIME, &current);
         long elapsed_us = (current.tv_sec - start.tv_sec) * 1000000 + 
@@ -570,5 +576,26 @@ void send_payload_and_process_response(int socket, struct sockaddr_can *addr, in
             // Timeout reached
             break;
         }
+    }
+    
+    // Check if no response was received
+    if(!response_received) {
+        // Generate timestamp: YYYY-MM-DD HH:MM:SS.T
+        struct tm *tm_info_no_resp;
+        time_t now_sec_no_resp = time(NULL);
+        tm_info_no_resp = localtime(&now_sec_no_resp);
+        struct timeval now_tv_no_resp;
+        gettimeofday(&now_tv_no_resp, NULL);
+        int tenths_now_no_resp = now_tv_no_resp.tv_usec / 100000; // 0.1 second unit
+        snprintf(timestamp, sizeof(timestamp), "%04d-%02d-%02d %02d:%02d:%02d.%d",
+                tm_info_no_resp->tm_year + 1900, tm_info_no_resp->tm_mon + 1, tm_info_no_resp->tm_mday,
+                tm_info_no_resp->tm_hour, tm_info_no_resp->tm_min, tm_info_no_resp->tm_sec, tenths_now_no_resp);
+        
+        printf("No Response received for service: %s, option: %s\n", servicename, optionname);
+        
+        // Write "No Response" to CSV
+        fprintf(csv_file, "\"%s\",0x%03X,\"%s\",\"%s\",\"No Response\",-,\"-\"\n", 
+                timestamp, canid, servicename, optionname);
+        fflush(csv_file); // Ensure data is written immediately
     }
 }
